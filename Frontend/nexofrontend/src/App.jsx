@@ -6,7 +6,8 @@ import Login from './Components/Login/Login'
 import Home from './Components/Home/Home'
 import TransportPassengers from './Components/Transport/TransportPassengers'
 import ComerciosAdheridos from './Components/Comercios/ComerciosAdheridos'
-import AdminDashboard from './Components/Admin/AdminDashboard'
+import Viajes from './pages/Admin/Viajes'
+import Calendario from './pages/Admin/Calendario'
 import './App.css'
 
 function App() {
@@ -47,7 +48,16 @@ function App() {
             path="/admin"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
+                <Viajes />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/calendario"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Calendario />
               </ProtectedRoute>
             }
           />

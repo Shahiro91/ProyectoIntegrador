@@ -209,9 +209,85 @@
   color: #6b7280;
 }
 
+.contactOnlyPage {
+  display: flex;
+  justify-content: center;
+  padding: 32px 24px;
+}
+
+.contactSection {
+  width: min(100%, 760px);
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px 30px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.contactForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  color: #111827;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.field input,
+.field textarea {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #111827;
+  padding: 12px 14px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: 2px solid rgba(37, 99, 235, 0.2);
+  border-color: #2563eb;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+.submitButton {
+  align-self: flex-start;
+  border: none;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #fff;
+  padding: 12px 22px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.submitButton:hover {
+  opacity: 0.92;
+}
+
 @media (max-width: 900px) {
   .infoGrid,
-  .steps {
+  .steps,
+  .formRow {
     grid-template-columns: 1fr;
   }
 

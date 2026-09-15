@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import styles from './Home.module.css'
 
 const cities = ['Resistencia', 'Corrientes', 'Reconquista', 'Formosa', 'Asunción']
@@ -41,6 +41,49 @@ const comercioAdheridos = [
 
 function Home() {
   const navigate = useNavigate()
+  const location = useLocation()
+
+  const isContactOnlyView = location.hash === '#contacto'
+
+  if (isContactOnlyView) {
+    return (
+      <div className={styles.contactOnlyPage}>
+        <section id="contacto" className={styles.contactSection}>
+          <form className={styles.contactForm}>
+            <div className={styles.formRow}>
+              <label className={styles.field}>
+                <span>Nombre</span>
+                <input type="text" name="nombre" placeholder="Tu nombre" />
+              </label>
+
+              <label className={styles.field}>
+                <span>Email</span>
+                <input type="email" name="email" placeholder="tuemail@ejemplo.com" />
+              </label>
+            </div>
+
+            <label className={styles.field}>
+              <span>Celular</span>
+              <input type="tel" name="celular" placeholder="Ej: +54 9 362 123-4567" />
+            </label>
+
+            <label className={styles.field}>
+              <span>Consulta</span>
+              <textarea
+                name="mensaje"
+                rows="6"
+                placeholder="Contanos qué necesitás y te asesoramos."
+              />
+            </label>
+
+            <button type="submit" className={styles.submitButton}>
+              Enviar consulta
+            </button>
+          </form>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.home}>
@@ -98,6 +141,7 @@ function Home() {
           ))}
         </div>
       </section>
+
     </div>
   )
 }

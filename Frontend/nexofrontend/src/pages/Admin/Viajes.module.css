@@ -1,0 +1,151 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f2f6;
+  color: #111827;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  padding: 20px;
+}
+
+.welcome {
+  display: flex;
+  align-items: center;
+  min-height: 89px;
+  padding: 18px 48px;
+  border-radius: 15px;
+  background: #2554d8;
+  color: #fff;
+}
+
+.eyebrow {
+  display: none;
+}
+
+.welcome h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 13px;
+  margin: 30px 0;
+}
+
+.statCard {
+  min-height: 102px;
+  padding: 16px;
+  border-radius: 15px;
+  background: #fff;
+  text-align: center;
+}
+
+.statCard h2 {
+  margin: 0 0 13px;
+  font-size: 0.78rem;
+  text-align: left;
+}
+
+.statCard strong {
+  color: #444;
+  font-size: 1.25rem;
+  font-weight: 400;
+}
+
+.tripsPanel {
+  min-height: 350px;
+  padding: 20px 15px 24px;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.tripsPanel > h2 {
+  margin: 0 0 20px;
+  font-size: 0.95rem;
+}
+
+.tripList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 72px;
+  padding: 10px 18px;
+  border-radius: 15px;
+  background: #edf2f4;
+}
+
+.tripDetails {
+  flex: 1;
+  min-width: 0;
+  text-align: center;
+}
+
+.trip h3 {
+  margin: 0 0 4px;
+  font-size: 0.9rem;
+}
+
+.trip p {
+  margin: 0;
+  color: #96999d;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.viewButton {
+  flex: 0 0 120px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 15px;
+  background: #fff;
+  color: #174bd0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .content {
+    padding: 14px;
+  }
+
+  .welcome {
+    padding: 18px 24px;
+  }
+
+  .stats {
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .statCard {
+    padding: 12px 8px;
+  }
+
+  .statCard h2 {
+    font-size: 0.68rem;
+  }
+
+  .trip {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .viewButton {
+    flex-basis: auto;
+    width: 100%;
+  }
+}

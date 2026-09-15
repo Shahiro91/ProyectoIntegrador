@@ -1,0 +1,319 @@
+.turnero {
+  padding: 30px;
+  background: #f5f6f8;
+  min-height: 100vh;
+  color: #1f2937;
+}
+
+/* HEADER */
+
+  .turneroHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.turneroHeader h1 {
+  margin: 0;
+  font-size: 28px;
+}
+
+.turneroHeader p {
+  margin-top: 5px;
+  color: #6b7280;
+}
+
+/* CONTENIDO */
+
+.turneroContenido {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 25px;
+}
+
+/* CALENDARIO */
+
+.calendario {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.calendario-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.calendario-header h2 {
+  margin: 0;
+}
+
+.calendario-header button {
+  border: none;
+  background: #f1f3f5;
+  width: 35px;
+  height: 35px;
+  border-radius: 8px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+/* DÍAS */
+
+.diasSemana,
+.diasGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.diasSemana div {
+  text-align: center;
+  font-weight: 600;
+  color: #6b7280;
+  padding: 10px;
+}
+
+.dia {
+  min-height: 100px;
+  border: 1px solid #edf0f2;
+  padding: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.dia:hover {
+  background: #f8fafc;
+}
+
+.dia.seleccionado {
+  border: 2px solid #2563eb;
+  background: #eff6ff;
+}
+
+.dia.vacio {
+  background: #fafafa;
+  cursor: default;
+}
+
+.numeroDia {
+  font-weight: 600;
+}
+
+/* JORNADAS */
+
+.jornada {
+  margin-top: 10px;
+  padding: 7px;
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.jornada.pasajeros {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.jornada.encomiendas {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.jornada small {
+  font-weight: 600;
+}
+
+/* REFERENCIAS */
+
+.referencias {
+  display: flex;
+  gap: 25px;
+  margin-top: 20px;
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.referencias div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.punto.pasajeros {
+  background: #2563eb;
+}
+
+.punto.encomiendas {
+  background: #16a34a;
+}
+
+/* DETALLE */
+
+.detalle {
+  background: white;
+  border-radius: 12px;
+  padding: 25px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.detalle h2 {
+  margin-top: 0;
+}
+
+/* TIPO */
+
+.tipoJornada {
+  padding: 12px;
+  border-radius: 8px;
+  margin: 20px 0;
+  font-weight: 600;
+}
+
+.tipoJornada.pasajeros {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.tipoJornada.encomiendas {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+/* INFORMACIÓN */
+
+.detalleInfo {
+  display: grid;
+  gap: 15px;
+}
+
+.detalleInfo div {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.detalleInfo span {
+  color: #6b7280;
+}
+
+/* CAPACIDAD */
+
+.capacidad {
+  margin-top: 25px;
+}
+
+.capacidadHeader {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.barra {
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.barraProgreso {
+  height: 100%;
+  border-radius: 10px;
+}
+
+.barraProgreso.pasajeros {
+  background: #2563eb;
+}
+
+.barraProgreso.encomiendas {
+  background: #16a34a;
+}
+
+.capacidad p {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* BOTONES */
+
+.acciones {
+  display: flex;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+  .btnNueva,
+  .btnSecundario {
+  border: none;
+  padding: 11px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+  .btnNueva {
+  background: #2563eb;
+  color: white;
+}
+
+  .btnSecundario {
+  background: #f1f3f5;
+  color: #374151;
+}
+
+  .btnNueva:hover {
+  background: #1d4ed8;
+}
+
+/* SIN JORNADA */
+
+.sinJornada {
+  text-align: center;
+  padding: 50px 10px;
+  color: #6b7280;
+}
+
+.sinJornada div {
+  font-size: 40px;
+  margin-bottom: 15px;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+  .turneroContenido {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .turnero {
+    padding: 15px;
+  }
+
+  .dia {
+    min-height: 75px;
+  }
+
+  .jornada {
+    font-size: 10px;
+  }
+
+  .turneroHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+}
