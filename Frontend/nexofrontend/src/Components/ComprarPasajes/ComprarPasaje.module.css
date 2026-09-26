@@ -1,0 +1,424 @@
+.pasaje-page {
+  min-height: 100vh;
+  background: #f5f7fa;
+  padding: 24px 32px;
+  color: #18253d;
+}
+
+
+/* HEADER */
+
+.pasaje-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.pasaje-header h1 {
+  margin: 0;
+  font-size: 28px;
+  color: #18253d;
+}
+
+.pasaje-header p {
+  margin: 5px 0 0;
+  color: #718096;
+}
+
+.back-button {
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 12px;
+  background: white;
+  color: #18253d;
+  font-size: 30px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+
+/* INFORMACIÓN DEL VIAJE */
+
+.trip-card {
+  background: white;
+  border-radius: 18px;
+  padding: 16px 22px;
+  display: flex;
+  align-items: center;
+  gap: 35px;
+  margin-bottom: 18px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+.trip-location,
+.trip-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.trip-location span,
+.trip-info span {
+  color: #8490a3;
+  font-size: 13px;
+}
+
+.trip-location strong,
+.trip-info strong {
+  color: #18253d;
+  font-size: 17px;
+}
+
+.trip-arrow {
+  font-size: 25px;
+  color: #2d65e8;
+}
+
+.trip-info {
+  margin-left: auto;
+}
+
+
+/* CONTENIDO */
+
+.pasaje-content {
+  display: grid;
+  grid-template-columns: minmax(430px, 1fr) 330px;
+  gap: 18px;
+}
+
+
+/* TARJETA DE ASIENTOS */
+
+.seat-card {
+  background: white;
+  border-radius: 20px;
+  padding: 22px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+.seat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+
+.seat-header h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.seat-header p {
+  margin: 5px 0;
+  color: #8490a3;
+}
+
+
+/* REFERENCIAS */
+
+.legend {
+  display: flex;
+  gap: 18px;
+  font-size: 12px;
+  color: #667085;
+}
+
+.legend div {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-seat {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  display: inline-block;
+}
+
+.legend-seat.available {
+  background: #eef2f7;
+  border: 1px solid #d9dee7;
+}
+
+.legend-seat.selected {
+  background: #2864e8;
+}
+
+.legend-seat.occupied {
+  background: #d8dde5;
+}
+
+
+/* COMBI */
+
+.van {
+  width: min(330px, 100%);
+  margin: auto;
+  background: #f7f8fa;
+  border: 2px solid #e1e5eb;
+  border-radius: 100px 100px 30px 30px;
+  padding: 22px 24px 24px;
+}
+
+
+/* PARTE DEL CONDUCTOR */
+
+.van-front {
+  height: 75px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px dashed #cbd1da;
+  margin-bottom: 25px;
+}
+
+.driver-seat {
+  font-size: 25px;
+}
+
+.van-front span {
+  font-size: 11px;
+  color: #8a94a6;
+}
+
+
+/* ASIENTOS */
+
+.seats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.seat-row {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.seat-row .seat:nth-child(3) {
+  grid-column: 4;
+}
+
+.seat {
+  width: 44px;
+  height: 48px;
+  border: 1px solid #dce1e8;
+  border-radius: 10px 10px 7px 7px;
+  background: #eef2f7;
+  color: #39445a;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  box-shadow: 0 2px 3px rgba(0,0,0,0.05);
+}
+
+.seat:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: #2864e8;
+}
+
+
+/* OCUPADO */
+
+.seat.occupied {
+  background: #d8dde5;
+  color: #929aa8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+
+/* SELECCIONADO */
+
+.seat.selected {
+  background: #2864e8;
+  border-color: #2864e8;
+  color: white;
+  box-shadow: 0 4px 10px rgba(40,100,232,0.3);
+}
+
+
+/* ÚLTIMO ASIENTO */
+
+.last-seat-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+
+/* RESUMEN */
+
+.summary-card {
+  background: white;
+  border-radius: 20px;
+  padding: 28px;
+  height: fit-content;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+}
+
+.summary-card h2 {
+  margin: 0 0 25px;
+  font-size: 21px;
+}
+
+
+/* RUTA */
+
+.summary-route {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #edf0f3;
+}
+
+.summary-route div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.summary-route span {
+  color: #8a94a6;
+  font-size: 12px;
+}
+
+.summary-route strong {
+  font-size: 15px;
+}
+
+.summary-arrow {
+  color: #2864e8 !important;
+  font-size: 20px !important;
+}
+
+
+/* DATOS */
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 17px 0;
+  border-bottom: 1px solid #edf0f3;
+  font-size: 14px;
+}
+
+.summary-line span {
+  color: #8490a3;
+}
+
+.summary-line strong {
+  color: #18253d;
+}
+
+
+/* PRECIO */
+
+.summary-divider {
+  height: 15px;
+}
+
+.price-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 7px 0;
+  font-size: 14px;
+}
+
+.price-row span {
+  color: #8490a3;
+}
+
+.price-row.total {
+  font-size: 20px;
+  margin-top: 5px;
+}
+
+.price-row.total strong {
+  color: #2864e8;
+}
+
+
+/* BOTÓN */
+
+.continue-button {
+  width: 100%;
+  border: none;
+  background: #2864e8;
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-top: 25px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.continue-button:hover:not(:disabled) {
+  background: #1f55ca;
+}
+
+.continue-button:disabled {
+  background: #cbd2dc;
+  cursor: not-allowed;
+}
+
+.select-message {
+  text-align: center;
+  color: #9aa3b1;
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+
+  .pasaje-content {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    max-width: none;
+  }
+
+}
+
+@media (max-width: 700px) {
+
+  .pasaje-page {
+    padding: 20px;
+  }
+
+  .trip-card {
+    flex-wrap: wrap;
+    gap: 20px;
+  }
+
+  .trip-info {
+    margin-left: 0;
+  }
+
+  .seat-header {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .van {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+}

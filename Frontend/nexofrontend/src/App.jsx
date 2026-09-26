@@ -5,6 +5,7 @@ import Layout from './Components/Layout/Layout'
 import Login from './Components/Login/Login'
 import Home from './Components/Home/Home'
 import TransportPassengers from './Components/Transport/TransportPassengers'
+import ComprarPasaje from './Components/ComprarPasajes/selectorAsiento'
 import ComerciosAdheridos from './Components/Comercios/ComerciosAdheridos'
 import Viajes from './pages/Admin/Viajes'
 import Calendario from './pages/Admin/Calendario'
@@ -34,6 +35,8 @@ function App() {
               </Layout>
             }
           />
+
+          <Route path="/comprar-pasaje" element={<ComprarPasaje />} />
 
           <Route
             path="/comercios"
