@@ -29,10 +29,6 @@ function Login() {
   return (
     <div className={styles.page}>
       <section className={styles.banner}>
-        <div className={styles.photoPlaceholder} aria-hidden="true">
-          <span className={styles.photoHint}>Espacio para foto</span>
-        </div>
-
         <div className={styles.bannerContent}>
           <p className={styles.brand}>Nexo</p>
           <h1 className={styles.slogan}>Conectamos ciudades. Acercamos lo que necesitás.</h1>
@@ -48,6 +44,14 @@ function Login() {
           <p className={styles.loginSubtitle}>
             Ingresá con tu cuenta de cliente o administrador.
           </p>
+
+          <button
+            type="button"
+            className={styles.backButton}
+            onClick={() => navigate('/')}
+          >
+            Volver al inicio
+          </button>
 
           <form className={styles.form} onSubmit={handleSubmit}>
             <label className={styles.field}>
