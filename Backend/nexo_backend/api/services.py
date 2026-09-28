@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
 from .models import Reserva, Viaje, SolicitudEncomienda
 
 class ViajeService:
@@ -10,9 +11,10 @@ class ViajeService:
         return viaje.capacidad_total - asientos_ocupados
 
     @staticmethod
+    @transaction.atomic
     def crear_reserva(cliente, viaje_id, numero_asiento):
         """Valida disponibilidad y realiza la reserva"""
-        viaje = Viaje.objects.get(id=viaje_id)
+        viaje = Viaje.objects.select_for_update().get(id=viaje_id)
         
         # Validación de rango de asiento
         if numero_asiento < 1 or numero_asiento > viaje.capacidad_total:
@@ -22,11 +24,14 @@ class ViajeService:
         if Reserva.objects.filter(viaje=viaje, numero_asiento=numero_asiento).exists():
             raise ValidationError("El asiento seleccionado ya se encuentra ocupado.")
 
-        return Reserva.objects.create(
-            cliente=cliente,
-            viaje=viaje,
-            numero_asiento=numero_asiento
-        )
+        try:
+            return Reserva.objects.create(
+                cliente=cliente,
+                viaje=viaje,
+                numero_asiento=numero_asiento
+            )
+        except IntegrityError as error:
+            raise ValidationError("El asiento seleccionado ya se encuentra ocupado.") from error
 
 
 class EncomiendaService:

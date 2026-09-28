@@ -1,5 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./Turnero.module.css";
+import { guardarViaje, obtenerViajes } from "../../services/viajesService";
 
 const jornadasIniciales = {
   "2026-09-01": {
@@ -124,6 +125,7 @@ const formularioInicial = {
   origen: "",
   destino: "",
   capacidad: 19,
+  precio: "8500.00",
   idEncomienda: "",
   idCliente: "",
   idLocal: "",
@@ -147,11 +149,42 @@ function Turnero() {
   const [tipoFormulario, setTipoFormulario] = useState(null);
   const [fechaEnEdicion, setFechaEnEdicion] = useState(null);
   const [formulario, setFormulario] = useState(formularioInicial);
+  const [errorGuardado, setErrorGuardado] = useState("");
+  const [guardando, setGuardando] = useState(false);
   const [busquedaLocal, setBusquedaLocal] = useState("");
   const [errorLocal, setErrorLocal] = useState("");
   const [busquedaCliente, setBusquedaCliente] = useState("");
   const [errorCliente, setErrorCliente] = useState("");
   const [detalleAbierto, setDetalleAbierto] = useState(false);
+
+  useEffect(() => {
+    let isActive = true;
+
+    obtenerViajes()
+      .then((viajes) => {
+        if (!isActive) return;
+        const jornadasBackend = Object.fromEntries(
+          viajes.map((viaje) => [viaje.fecha_salida, {
+            id: viaje.id,
+            tipo: "pasajeros",
+            horario: viaje.horario_salida,
+            origen: viaje.origen,
+            destino: viaje.destino,
+            ocupados: viaje.asientos_ocupados.length,
+            capacidad: viaje.capacidad_total,
+            precio: viaje.precio,
+          }]),
+        );
+        setJornadas((actuales) => ({ ...actuales, ...jornadasBackend }));
+      })
+      .catch((error) => {
+        if (isActive) setErrorGuardado(error.message);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   const { año, mes } = mesActual;
 
@@ -223,6 +256,7 @@ function Turnero() {
   const abrirNuevaJornada = () => {
     setFechaEnEdicion(null);
     setTipoFormulario(null);
+    setErrorGuardado("");
     setFormulario({
       ...formularioInicial,
       fecha: fechaSeleccionada,
@@ -241,6 +275,7 @@ function Turnero() {
 
     setFechaEnEdicion(fechaSeleccionada);
     setTipoFormulario(jornada.tipo);
+    setErrorGuardado("");
     setFormulario({
       ...formularioInicial,
       ...jornada,
@@ -290,7 +325,7 @@ function Turnero() {
     setFormulario((actual) => ({ ...actual, idCliente: cliente.id }));
   };
 
-  const guardarJornada = (evento) => {
+  const guardarJornada = async (evento) => {
     evento.preventDefault();
 
     if (tipoFormulario === "encomiendas" && !formulario.idLocal) {
@@ -308,11 +343,35 @@ function Turnero() {
     }
 
     const fecha = formulario.fecha;
+    let viajePersistido = null;
+
+    if (tipoFormulario === "pasajeros") {
+      setGuardando(true);
+      setErrorGuardado("");
+      try {
+        viajePersistido = await guardarViaje(jornada?.id, {
+          fecha,
+          horario: formulario.horario,
+          origen: formulario.origen,
+          destino: formulario.destino,
+          capacidad: formulario.capacidad,
+          precio: formulario.precio,
+        });
+      } catch (error) {
+        setErrorGuardado(error.message);
+        setGuardando(false);
+        return;
+      }
+      setGuardando(false);
+    }
+
     const jornadaGuardada = {
       ...formulario,
+      id: viajePersistido?.id ?? jornada?.id,
       tipo: tipoFormulario,
       cantidadPaquetes: totalPaquetes,
-      ocupados: fechaEnEdicion ? jornada.ocupados || 0 : 0,
+      ocupados: viajePersistido?.asientos_ocupados.length ?? (fechaEnEdicion ? jornada.ocupados || 0 : 0),
+      precio: viajePersistido?.precio ?? formulario.precio,
       pesoActual: fechaEnEdicion ? jornada.pesoActual || 0 : 0,
       pesoMaximo: 500,
       encomiendas: tipoFormulario === "encomiendas"
@@ -686,6 +745,7 @@ function Turnero() {
                   <div className={styles.camposEspecificos}>
                     <h3>Capacidad</h3>
                     <label>Capacidad total<input type="number" name="capacidad" min="1" value={formulario.capacidad} onChange={actualizarFormulario} required /></label>
+                    <label>Precio por pasajero<input type="number" name="precio" min="0.01" step="0.01" value={formulario.precio} onChange={actualizarFormulario} required /></label>
                   </div>
                 ) : (
                   <div className={styles.camposEspecificos}>
@@ -798,8 +858,11 @@ function Turnero() {
 
                 <div className={styles.accionesModal}>
                   <button type="button" className={styles.btnSecundario} onClick={cerrarModal}>Cancelar</button>
-                  <button type="submit" className={styles.btnNueva}>{fechaEnEdicion ? "Guardar cambios" : "Crear jornada"}</button>
+                  <button type="submit" className={styles.btnNueva} disabled={guardando}>
+                    {guardando ? "Guardando..." : fechaEnEdicion ? "Guardar cambios" : "Crear jornada"}
+                  </button>
                 </div>
+                {errorGuardado && <p className={styles.errorCampo} role="alert">{errorGuardado}</p>}
               </form>
             )}
           </section>

@@ -17,10 +17,18 @@ Including another URLconf
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import path
+from django.urls import include, path
+from rest_framework.routers import DefaultRouter
+
+from api.views import ReservaViewSet, ViajeViewSet
+
+router = DefaultRouter()
+router.register('viajes', ViajeViewSet, basename='viaje')
+router.register('reservas', ReservaViewSet, basename='reserva')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/', include(router.urls)),
 ]
 
 if settings.DEBUG:

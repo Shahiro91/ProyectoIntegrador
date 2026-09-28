@@ -1,37 +1,58 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "./ComprarPasaje.module.css";
+import { obtenerViajes } from "../../services/viajesService";
 
-const seats = [
-  { id: 1, occupied: false },
-  { id: 2, occupied: true },
-  { id: 3, occupied: false },
-  { id: 4, occupied: false },
-
-  { id: 5, occupied: false },
-  { id: 6, occupied: false },
-  { id: 7, occupied: true },
-  { id: 8, occupied: false },
-
-  { id: 9, occupied: false },
-  { id: 10, occupied: true },
-  { id: 11, occupied: false },
-  { id: 12, occupied: false },
-
-  { id: 13, occupied: false },
-  { id: 14, occupied: false },
-  { id: 15, occupied: true },
-  { id: 16, occupied: false },
-
-  { id: 17, occupied: false },
-  { id: 18, occupied: false },
-];
-
-const rearSeat = { id: 19, occupied: false };
+function formatDate(date) {
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "long",
+    timeZone: "UTC",
+    weekday: "long",
+    year: "numeric",
+  }).format(new Date(`${date}T12:00:00Z`));
+}
 
 function ComprarPasaje() {
+  const navigate = useNavigate();
   const [selectedSeats, setSelectedSeats] = useState([]);
+  const [trips, setTrips] = useState([]);
+  const [selectedTripId, setSelectedTripId] = useState("");
+  const [loadingTrips, setLoadingTrips] = useState(true);
+  const [tripsError, setTripsError] = useState("");
 
-  const price = 8500;
+  useEffect(() => {
+    let isActive = true;
+
+    obtenerViajes()
+      .then((availableTrips) => {
+        if (!isActive) return;
+        setTrips(availableTrips);
+        setSelectedTripId(availableTrips[0] ? String(availableTrips[0].id) : "");
+      })
+      .catch((error) => {
+        if (isActive) setTripsError(error.message);
+      })
+      .finally(() => {
+        if (isActive) setLoadingTrips(false);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  const selectedTrip = trips.find((trip) => trip.id === Number(selectedTripId));
+  const seats = selectedTrip
+    ? Array.from({ length: selectedTrip.capacidad_total }, (_, index) => ({
+        id: index + 1,
+        occupied: selectedTrip.asientos_ocupados.includes(index + 1),
+      }))
+    : [];
+  const seatRows = Array.from({ length: Math.ceil(seats.length / 4) }, (_, index) =>
+    seats.slice(index * 4, index * 4 + 4),
+  );
+  const price = Number(selectedTrip?.precio ?? 0);
 
   const toggleSeat = (seat) => {
     if (seat.occupied) return;
@@ -53,13 +74,45 @@ function ComprarPasaje() {
       {/* ENCABEZADO */}
       <div className={styles["pasaje-header"]}>
         <div>
-          <button className={styles["back-button"]}>‹</button>
+          <button
+            type="button"
+            className={styles["back-button"]}
+            aria-label="Volver a transporte de pasajeros"
+            onClick={() => navigate("/passengers")}
+          >
+            ‹
+          </button>
         </div>
 
         <div>
           <h1>Elegí tu asiento</h1>
           <p>Seleccioná la butaca para tu viaje</p>
         </div>
+      </div>
+
+      <div className={styles["trip-selector"]}>
+        <label htmlFor="trip-choice">Viaje</label>
+        <select
+          id="trip-choice"
+          value={selectedTripId}
+          disabled={loadingTrips || trips.length === 0}
+          onChange={(event) => {
+            setSelectedTripId(event.target.value);
+            setSelectedSeats([]);
+          }}
+        >
+          {trips.length === 0 && <option value="">No hay viajes disponibles</option>}
+          {trips.map((trip) => (
+            <option key={trip.id} value={trip.id}>
+              {formatDate(trip.fecha_salida)} · {trip.horario_salida} · {trip.origen} → {trip.destino}
+            </option>
+          ))}
+        </select>
+        {loadingTrips && <p className={styles["trip-message"]}>Cargando viajes...</p>}
+        {!loadingTrips && tripsError && <p className={styles["trip-message"]}>{tripsError}</p>}
+        {!loadingTrips && !tripsError && trips.length === 0 && (
+          <p className={styles["trip-message"]}>Todavía no hay viajes publicados para reservar.</p>
+        )}
       </div>
 
 
@@ -72,7 +125,11 @@ function ComprarPasaje() {
           <div className={styles["seat-header"]}>
             <div>
               <h2>Elegí tu butaca</h2>
-              <p>Combi NEXO · 19 pasajeros</p>
+              <p>
+                {selectedTrip
+                  ? `Combi NEXO · ${selectedTrip.capacidad_total} pasajeros`
+                  : "Elegí un viaje para ver sus asientos"}
+              </p>
             </div>
 
             <div className={styles.legend}>
@@ -109,9 +166,12 @@ function ComprarPasaje() {
             {/* ASIENTOS */}
             <div className={styles["seats-grid"]}>
 
-              {Array.from({ length: 4 }, (_, rowIndex) => (
-                <div className={styles["seat-row"]} key={`row-${rowIndex}`}>
-                  {seats.slice(rowIndex * 4, rowIndex * 4 + 4).map((seat) => {
+              {seatRows.map((row, rowIndex) => (
+                <div
+                  className={`${styles["seat-row"]} ${row.length < 4 ? styles["last-seat-row"] : ""}`}
+                  key={`row-${rowIndex}`}
+                >
+                  {row.map((seat) => {
                     const isSelected = selectedSeats.includes(seat.id);
 
                     return (
@@ -128,30 +188,6 @@ function ComprarPasaje() {
                 </div>
               ))}
 
-              <div className={`${styles["seat-row"]} ${styles["last-seat-row"]}`}>
-                {seats.slice(16).map((seat) => {
-                  const isSelected = selectedSeats.includes(seat.id);
-
-                  return (
-                    <button
-                      key={seat.id}
-                      disabled={seat.occupied}
-                      onClick={() => toggleSeat(seat)}
-                      className={`${styles.seat} ${seat.occupied ? styles.occupied : ""} ${isSelected ? styles.selected : ""}`}
-                    >
-                      {seat.id}
-                    </button>
-                  );
-                })}
-                <button
-                  className={`${styles.seat} ${rearSeat.occupied ? styles.occupied : ""} ${selectedSeats.includes(rearSeat.id) ? styles.selected : ""}`}
-                  disabled={rearSeat.occupied}
-                  onClick={() => toggleSeat(rearSeat)}
-                >
-                  {rearSeat.id}
-                </button>
-              </div>
-
             </div>
 
           </div>
@@ -167,26 +203,26 @@ function ComprarPasaje() {
           <div className={styles["summary-route"]}>
             <div>
               <span>Origen</span>
-              <strong>Avellaneda</strong>
+              <strong>{selectedTrip?.origen ?? "-"}</strong>
             </div>
 
             <span className={styles["summary-arrow"]}>→</span>
 
             <div>
               <span>Destino</span>
-              <strong>Reconquista</strong>
+              <strong>{selectedTrip?.destino ?? "-"}</strong>
             </div>
           </div>
 
 
           <div className={styles["summary-line"]}>
             <span>Fecha</span>
-            <strong>02/09/2026</strong>
+            <strong>{selectedTrip ? formatDate(selectedTrip.fecha_salida) : "-"}</strong>
           </div>
 
           <div className={styles["summary-line"]}>
             <span>Horario</span>
-            <strong>10:00 hs</strong>
+            <strong>{selectedTrip ? `${selectedTrip.horario_salida} hs` : "-"}</strong>
           </div>
 
 
@@ -219,7 +255,7 @@ function ComprarPasaje() {
 
           <button
             className={styles["continue-button"]}
-            disabled={selectedSeats.length === 0}
+            disabled={!selectedTrip || selectedSeats.length === 0}
           >
             Continuar
           </button>

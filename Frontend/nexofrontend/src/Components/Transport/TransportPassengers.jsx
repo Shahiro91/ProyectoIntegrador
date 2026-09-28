@@ -1,8 +1,10 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import styles from './TransportPassengers.module.css'
 
 function TransportPassengers() {
   const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
 
   return (
     <div className={styles.page}>
@@ -18,7 +20,7 @@ function TransportPassengers() {
             <button
               type="button"
               className={styles.primaryButton}
-              onClick={() => navigate('/login')}
+              onClick={() => navigate(isAuthenticated ? '/comprar-pasaje' : '/login')}
             >
               Solicitar traslado
             </button>
