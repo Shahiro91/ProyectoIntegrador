@@ -26,7 +26,11 @@ from api.views import (
     ReservaViewSet,
     SolicitudEncomiendaViewSet,
     ViajeViewSet,
+    cerrar_sesion,
     csrf_token,
+    iniciar_sesion,
+    registrar_cliente,
+    usuario_actual,
 )
 
 router = DefaultRouter()
@@ -39,6 +43,10 @@ router.register('encomiendas', SolicitudEncomiendaViewSet, basename='encomienda'
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/csrf/', csrf_token, name='csrf-token'),
+    path('api/auth/register/', registrar_cliente, name='auth-register'),
+    path('api/auth/login/', iniciar_sesion, name='auth-login'),
+    path('api/auth/me/', usuario_actual, name='auth-me'),
+    path('api/auth/logout/', cerrar_sesion, name='auth-logout'),
     path('api/', include(router.urls)),
 ]
 

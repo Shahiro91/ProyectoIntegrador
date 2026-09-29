@@ -2,4 +2,5 @@ from django.apps import AppConfig
 
 
 class ClientesConfig(AppConfig):
-    name = 'Clientes'
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'nexo_backend.Clientes'

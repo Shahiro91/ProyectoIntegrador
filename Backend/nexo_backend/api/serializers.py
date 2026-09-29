@@ -1,9 +1,68 @@
+from django.contrib.auth import get_user_model, password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from nexo_backend.Clientes.models import Cliente
+
 from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
 from .services import EncomiendaService, ViajeService
+
+
+class RegistroClienteSerializer(serializers.Serializer):
+    nombre = serializers.CharField(max_length=100)
+    apellido = serializers.CharField(max_length=100)
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+    telefono = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    direccion = serializers.CharField(max_length=200, required=False, allow_blank=True)
+    codigo_postal = serializers.CharField(max_length=20)
+
+    def validate_email(self, value):
+        email = value.strip().lower()
+        user_model = get_user_model()
+        if Cliente.objects.filter(email__iexact=email).exists():
+            raise serializers.ValidationError('Ya existe una cuenta con ese email.')
+        if user_model.objects.filter(username__iexact=email).exists():
+            raise serializers.ValidationError('Ya existe una cuenta con ese email.')
+        return email
+
+    def validate(self, attrs):
+        user_model = get_user_model()
+        candidate = user_model(username=attrs['email'], email=attrs['email'])
+        try:
+            password_validation.validate_password(attrs['password'], user=candidate)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError({'password': error.messages}) from error
+        return attrs
+
+    @transaction.atomic
+    def create(self, validated_data):
+        user_model = get_user_model()
+        email = validated_data['email']
+        user = user_model.objects.create_user(
+            username=email,
+            email=email,
+            password=validated_data['password'],
+        )
+        return Cliente.objects.create(
+            usuario=user,
+            nombre=validated_data['nombre'],
+            apellido=validated_data['apellido'],
+            email=email,
+            telefono=validated_data.get('telefono', ''),
+            direccion=validated_data.get('direccion', ''),
+            codigo_postal=validated_data['codigo_postal'],
+        )
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField(write_only=True, trim_whitespace=False)
+
+    def validate_email(self, value):
+        return value.strip().lower()
 
 
 class LocalSerializer(serializers.ModelSerializer):
