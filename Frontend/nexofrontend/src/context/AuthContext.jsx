@@ -1,17 +1,35 @@
-import { createContext, useContext, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
+import { AuthContext } from './useAuth'
 import {
-  clearSession,
-  getSession,
+  getCurrentUser,
   login as loginRequest,
-  saveSession,
+  logout as logoutRequest,
+  register as registerRequest,
 } from '../services/authService'
 
-const AuthContext = createContext(null)
-
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => getSession())
-  const [loading, setLoading] = useState(false)
+  const [user, setUser] = useState(null)
+  const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    let active = true
+
+    getCurrentUser()
+      .then((session) => {
+        if (active) setUser(session)
+      })
+      .catch((err) => {
+        if (active) setError(err.message)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+
+    return () => {
+      active = false
+    }
+  }, [])
 
   async function login(email, password) {
     setLoading(true)
@@ -19,7 +37,6 @@ export function AuthProvider({ children }) {
 
     try {
       const session = await loginRequest(email, password)
-      saveSession(session)
       setUser(session)
       return session
     } catch (err) {
@@ -30,33 +47,47 @@ export function AuthProvider({ children }) {
     }
   }
 
-  function logout() {
-    clearSession()
-    setUser(null)
+  async function register(data) {
+    setLoading(true)
     setError(null)
+
+    try {
+      const session = await registerRequest(data)
+      setUser(session)
+      return session
+    } catch (err) {
+      setError(err.message)
+      throw err
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      error,
-      login,
-      logout,
-      isAuthenticated: Boolean(user),
-      isAdmin: user?.role === 'admin',
-      isCliente: user?.role === 'cliente',
-    }),
-    [user, loading, error],
-  )
+  async function logout() {
+    setLoading(true)
+    setError(null)
+
+    try {
+      await logoutRequest()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setUser(null)
+      setLoading(false)
+    }
+  }
+
+  const value = {
+    user,
+    loading,
+    error,
+    login,
+    register,
+    logout,
+    isAuthenticated: Boolean(user),
+    isAdmin: user?.role === 'admin',
+    isCliente: user?.role === 'cliente',
+  }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider')
-  }
-  return context
 }

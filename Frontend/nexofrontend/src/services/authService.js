@@ -1,95 +1,74 @@
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:8000'
+const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
-const MOCK_USERS = [
-  {
-    email: 'cliente@nexo.com',
-    password: 'cliente123',
-    role: 'cliente',
-    name: 'Cliente Demo',
-  },
-  {
-    email: 'admin@nexo.com',
-    password: 'admin123',
-    role: 'admin',
-    name: 'Admin Demo',
-  },
-]
-
-const VALID_ROLES = ['cliente', 'admin']
-
-function findMockUser(email, password) {
-  return MOCK_USERS.find(
-    (user) =>
-      user.email.toLowerCase() === email.toLowerCase() && user.password === password,
-  )
+function apiUrl(path) {
+  return `${API_URL}/api${path}`
 }
 
-function isValidUser(user) {
-  return Boolean(user?.email && user?.role && VALID_ROLES.includes(user.role))
+function readCookie(name) {
+  const cookie = document.cookie
+    .split('; ')
+    .find((item) => item.startsWith(`${name}=`))
+
+  return cookie ? decodeURIComponent(cookie.split('=').slice(1).join('=')) : null
 }
 
-async function loginWithApi(email, password) {
-  const response = await fetch(`${API_URL}/api/auth/login/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+async function getCsrfToken() {
+  const response = await fetch(apiUrl('/csrf/'), { credentials: 'include' })
+  if (!response.ok) throw new Error('No se pudo iniciar una sesión segura.')
+
+  const token = readCookie('csrftoken')
+  if (!token) throw new Error('No se recibió el token de seguridad.')
+  return token
+}
+
+function responseError(data) {
+  if (typeof data?.detail === 'string') return data.detail
+
+  const firstMessage = Object.values(data ?? {})
+    .flat(Infinity)
+    .find((value) => typeof value === 'string')
+
+  return firstMessage ?? 'No se pudo completar la solicitud.'
+}
+
+async function request(path, { method = 'GET', body, csrf = false } = {}) {
+  const headers = { Accept: 'application/json' }
+  if (body) headers['Content-Type'] = 'application/json'
+  if (csrf) headers['X-CSRFToken'] = await getCsrfToken()
+
+  const response = await fetch(apiUrl(path), {
+    method,
+    credentials: 'include',
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
   })
+  const data = await response.json().catch(() => null)
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({}))
-    throw new Error(error.detail ?? 'Credenciales incorrectas')
-  }
-
-  const user = await response.json()
-
-  if (!isValidUser(user)) {
-    throw new Error('Respuesta de login inválida')
-  }
-
-  return user
+  if (!response.ok) throw new Error(responseError(data))
+  return data
 }
 
-export async function login(email, password) {
-  const mockUser = findMockUser(email, password)
-
-  if (mockUser) {
-    return {
-      email: mockUser.email,
-      name: mockUser.name,
-      role: mockUser.role,
-    }
-  }
-
-  try {
-    return await loginWithApi(email, password)
-  } catch (error) {
-    throw new Error(error.message || 'Email o contraseña incorrectos')
-  }
+export function login(email, password) {
+  return request('/auth/login/', {
+    method: 'POST',
+    body: { email, password },
+    csrf: true,
+  })
 }
 
-export function saveSession(user) {
-  localStorage.setItem('nexo_user', JSON.stringify(user))
+export function register(data) {
+  return request('/auth/register/', {
+    method: 'POST',
+    body: data,
+    csrf: true,
+  })
 }
 
-export function getSession() {
-  const raw = localStorage.getItem('nexo_user')
-  if (!raw) return null
-
-  try {
-    const user = JSON.parse(raw)
-
-    if (!isValidUser(user)) {
-      clearSession()
-      return null
-    }
-
-    return user
-  } catch {
-    clearSession()
-    return null
-  }
+export async function getCurrentUser() {
+  const response = await request('/auth/me/')
+  return response.user
 }
 
-export function clearSession() {
-  localStorage.removeItem('nexo_user')
+export function logout() {
+  return request('/auth/logout/', { method: 'POST', csrf: true })
 }

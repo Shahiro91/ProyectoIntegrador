@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import styles from './nav.module.css'
 
 const publicLinks = [
@@ -38,8 +38,8 @@ function Nav() {
     return isActive ? styles.active : styles.link
   }
 
-  function handleLogout() {
-    logout()
+  async function handleLogout() {
+    await logout()
     navigate('/login')
   }
 

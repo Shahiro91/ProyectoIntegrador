@@ -1,4 +1,4 @@
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import { useLocation, useNavigate } from 'react-router-dom'
 import styles from './Sidebar.module.css'
 

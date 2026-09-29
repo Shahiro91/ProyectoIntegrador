@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import styles from './Home.module.css'
 import SolicitudEncomienda from '../Encomiendas/SolicitudEncomienda'
 import { enviarConsulta } from '../../services/consultasService'

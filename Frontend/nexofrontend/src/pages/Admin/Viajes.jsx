@@ -1,4 +1,4 @@
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../context/useAuth'
 import Sidebar from '../../components/Admin/Sidebar'
 import styles from './Viajes.module.css'
 
