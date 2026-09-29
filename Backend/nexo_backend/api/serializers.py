@@ -2,8 +2,14 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils import timezone
 from rest_framework import serializers
 
-from .models import Reserva, Viaje
-from .services import ViajeService
+from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+from .services import EncomiendaService, ViajeService
+
+
+class LocalSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Local
+        fields = ('id', 'nombre', 'direccion', 'telefono', 'catalogo_pdf')
 
 
 class ViajeSerializer(serializers.ModelSerializer):
@@ -64,3 +70,38 @@ class ReservaSerializer(serializers.ModelSerializer):
             )
         except DjangoValidationError as error:
             raise serializers.ValidationError({'detail': error.messages}) from error
+
+
+class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
+    local = serializers.PrimaryKeyRelatedField(queryset=Local.objects.all())
+    tamano = serializers.ChoiceField(choices=('Pequeño', 'Mediano', 'Grande'))
+
+    class Meta:
+        model = SolicitudEncomienda
+        fields = (
+            'id',
+            'local',
+            'origen',
+            'destino',
+            'nombre_destinatario',
+            'telefono_destinatario',
+            'peso_kg',
+            'tamano',
+            'estado',
+            'fecha_solicitud',
+        )
+        read_only_fields = ('id', 'estado', 'fecha_solicitud')
+
+    def create(self, validated_data):
+        cliente = validated_data.pop('cliente')
+        try:
+            return EncomiendaService.solicitar_encomienda(cliente, validated_data)
+        except DjangoValidationError as error:
+            raise serializers.ValidationError({'peso_kg': error.messages}) from error
+
+
+class ConsultaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Consulta
+        fields = ('id', 'nombre', 'email', 'celular', 'mensaje', 'fecha_creacion')
+        read_only_fields = ('id', 'fecha_creacion')

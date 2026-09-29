@@ -229,6 +229,29 @@
   gap: 16px;
 }
 
+.formHeader {
+  margin-bottom: 24px;
+}
+
+.formEyebrow {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.formTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 1.6rem;
+}
+
+.formDescription {
+  margin: 8px 0 0;
+  color: #4b5563;
+  line-height: 1.5;
+}
+
 .formRow {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -245,7 +268,8 @@
 }
 
 .field input,
-.field textarea {
+.field textarea,
+.field select {
   width: 100%;
   border: 1px solid #d1d5db;
   border-radius: 12px;
@@ -257,7 +281,8 @@
 }
 
 .field input:focus,
-.field textarea:focus {
+.field textarea:focus,
+.field select:focus {
   outline: 2px solid rgba(37, 99, 235, 0.2);
   border-color: #2563eb;
 }
@@ -282,6 +307,26 @@
 
 .submitButton:hover {
   opacity: 0.92;
+}
+
+.submitButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.formError,
+.formSuccess {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.formError {
+  color: #b42318;
+}
+
+.formSuccess {
+  color: #067647;
 }
 
 @media (max-width: 900px) {

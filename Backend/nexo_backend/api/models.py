@@ -85,3 +85,14 @@ class SolicitudEncomienda(models.Model):
         default=Estado.PENDIENTE,
     )
     fecha_solicitud = models.DateTimeField(auto_now_add=True)
+
+
+class Consulta(models.Model):
+    nombre = models.CharField(max_length=150)
+    email = models.EmailField(blank=True)
+    celular = models.CharField(max_length=50)
+    mensaje = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.nombre} ({self.fecha_creacion:%Y-%m-%d})'

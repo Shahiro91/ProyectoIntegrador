@@ -6,7 +6,7 @@ const publicLinks = [
   { label: 'Inicio', path: '/' },
   { label: 'Transporte pasajeros', path: '/passengers' },
   { label: 'Comercios adheridos', path: '/comercios' },
-  { label: 'Hacer pedido', path: '/#pedido' },
+  { label: 'Solicitar encomienda', path: '/#pedido' },
   { label: 'Contacto', path: '/#contacto' },
 ]
 
@@ -16,7 +16,7 @@ function Nav() {
   const location = useLocation()
 
   const menuLinks = publicLinks.filter((link) => {
-    if (link.label === 'Hacer pedido' && !isAuthenticated) {
+    if (link.label === 'Solicitar encomienda' && !isAuthenticated) {
       return false
     }
     return true
@@ -32,7 +32,10 @@ function Nav() {
         : styles.link
     }
 
-    return currentPath === linkPath ? styles.active : styles.link
+    const isHomeLink = linkPath === '/'
+    const isActive = currentPath === linkPath && (!isHomeLink || !location.hash)
+
+    return isActive ? styles.active : styles.link
   }
 
   function handleLogout() {
@@ -54,6 +57,7 @@ function Nav() {
               <a
                 href={link.path}
                 className={getLinkClass(link)}
+                aria-current={getLinkClass(link) === styles.active ? 'page' : undefined}
                 onClick={(event) => {
                   event.preventDefault()
                   navigate(link.path)

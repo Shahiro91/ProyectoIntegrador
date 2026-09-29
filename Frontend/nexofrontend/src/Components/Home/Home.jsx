@@ -1,5 +1,9 @@
+import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useAuth } from '../../context/AuthContext'
 import styles from './Home.module.css'
+import SolicitudEncomienda from '../Encomiendas/SolicitudEncomienda'
+import { enviarConsulta } from '../../services/consultasService'
 
 const cities = ['Resistencia', 'Corrientes', 'Reconquista', 'Formosa', 'Asunción']
 
@@ -21,50 +25,80 @@ const steps = [
   },
 ]
 
-const comercioAdheridos = [
-  {
-    name: 'La Tiendita',
-    address: 'Av. 9 de Julio 123, Resistencia',
-    phone: '+54 362 123-4567',
-  },
-  {
-    name: 'Delicias Corrientes',
-    address: 'Sarmiento 455, Corrientes',
-    phone: '+54 379 987-6543',
-  },
-  {
-    name: 'Mercado Reconquista',
-    address: 'Rivadavia 78, Reconquista',
-    phone: '+54 348 321-0098',
-  },
-]
+const consultaInicial = {
+  nombre: '',
+  email: '',
+  celular: '',
+  mensaje: '',
+}
 
 function Home() {
   const navigate = useNavigate()
   const location = useLocation()
+  const { isAuthenticated } = useAuth()
+  const [consulta, setConsulta] = useState(consultaInicial)
+  const [enviandoConsulta, setEnviandoConsulta] = useState(false)
+  const [errorConsulta, setErrorConsulta] = useState('')
+  const [consultaEnviada, setConsultaEnviada] = useState(false)
 
   const isContactOnlyView = location.hash === '#contacto'
+
+  function actualizarConsulta(event) {
+    const { name, value } = event.target
+    setConsulta((current) => ({ ...current, [name]: value }))
+    setErrorConsulta('')
+    setConsultaEnviada(false)
+  }
+
+  async function enviarFormularioContacto(event) {
+    event.preventDefault()
+    setEnviandoConsulta(true)
+    setErrorConsulta('')
+
+    try {
+      await enviarConsulta(consulta)
+      setConsulta(consultaInicial)
+      setConsultaEnviada(true)
+    } catch (error) {
+      setErrorConsulta(error.message)
+    } finally {
+      setEnviandoConsulta(false)
+    }
+  }
+
+  if (location.hash === '#pedido') {
+    return (
+      <div className={styles.contactOnlyPage}>
+        <SolicitudEncomienda />
+      </div>
+    )
+  }
 
   if (isContactOnlyView) {
     return (
       <div className={styles.contactOnlyPage}>
         <section id="contacto" className={styles.contactSection}>
-          <form className={styles.contactForm}>
+          <header className={styles.formHeader}>
+            <p className={styles.formEyebrow}>CONTACTO</p>
+            <h1 className={styles.formTitle}>Dejanos tu consulta</h1>
+            <p className={styles.formDescription}>Nos comunicaremos con vos por teléfono.</p>
+          </header>
+          <form className={styles.contactForm} onSubmit={enviarFormularioContacto}>
             <div className={styles.formRow}>
               <label className={styles.field}>
                 <span>Nombre</span>
-                <input type="text" name="nombre" placeholder="Tu nombre" />
+                <input type="text" name="nombre" value={consulta.nombre} onChange={actualizarConsulta} placeholder="Tu nombre" required />
               </label>
 
               <label className={styles.field}>
-                <span>Email</span>
-                <input type="email" name="email" placeholder="tuemail@ejemplo.com" />
+                <span>Email (opcional)</span>
+                <input type="email" name="email" value={consulta.email} onChange={actualizarConsulta} placeholder="tuemail@ejemplo.com" />
               </label>
             </div>
 
             <label className={styles.field}>
-              <span>Celular</span>
-              <input type="tel" name="celular" placeholder="Ej: +54 9 362 123-4567" />
+              <span>Celular para contactarte</span>
+              <input type="tel" name="celular" value={consulta.celular} onChange={actualizarConsulta} placeholder="Ej: +54 9 362 123-4567" required />
             </label>
 
             <label className={styles.field}>
@@ -72,12 +106,22 @@ function Home() {
               <textarea
                 name="mensaje"
                 rows="6"
+                value={consulta.mensaje}
+                onChange={actualizarConsulta}
                 placeholder="Contanos qué necesitás y te asesoramos."
+                required
               />
             </label>
 
-            <button type="submit" className={styles.submitButton}>
-              Enviar consulta
+            {errorConsulta && <p className={styles.formError} role="alert">{errorConsulta}</p>}
+            {consultaEnviada && (
+              <p className={styles.formSuccess} role="status">
+                Recibimos tu consulta. Nos pondremos en contacto con vos por teléfono.
+              </p>
+            )}
+
+            <button type="submit" className={styles.submitButton} disabled={enviandoConsulta}>
+              {enviandoConsulta ? 'Enviando...' : 'Enviar consulta'}
             </button>
           </form>
         </section>
@@ -87,19 +131,21 @@ function Home() {
 
   return (
     <div className={styles.home}>
-      <section className={styles.hero}>
-        <h2 className={styles.heroTitle}>Comprás en otra ciudad, te lo llevamos.</h2>
-        <p className={styles.heroSubtitle}>
-          Qué hacemos, a dónde viajamos, cómo funciona y cómo pedir, todo en una sola vista.
-        </p>
-        <button
-          type="button"
-          className={styles.heroButton}
-          onClick={() => navigate('/login')}
-        >
-          Iniciar sesión
-        </button>
-      </section>
+      {!isAuthenticated && (
+        <section className={styles.hero}>
+          <h2 className={styles.heroTitle}>Comprás en otra ciudad, te lo llevamos.</h2>
+          <p className={styles.heroSubtitle}>
+            Qué hacemos, a dónde viajamos, cómo funciona y cómo pedir, todo en una sola vista.
+          </p>
+          <button
+            type="button"
+            className={styles.heroButton}
+            onClick={() => navigate('/login')}
+          >
+            Iniciar sesión
+          </button>
+        </section>
+      )}
 
       <div className={styles.infoGrid}>
         <article className={styles.card}>

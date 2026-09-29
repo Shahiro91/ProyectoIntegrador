@@ -1,27 +1,31 @@
+import { useEffect, useState } from 'react'
 import styles from './ComerciosAdheridos.module.css'
-
-const comerciosAdheridos = [
-  {
-    name: 'La Tiendita',
-    address: 'Av. 9 de Julio 123, Resistencia',
-    phone: '+54 362 123-4567',
-    catalogUrl: '/catalogs/la-tiendita.pdf',
-  },
-  {
-    name: 'Delicias Corrientes',
-    address: 'Sarmiento 455, Corrientes',
-    phone: '+54 379 987-6543',
-    catalogUrl: '/catalogs/delicias-corrientes.pdf',
-  },
-  {
-    name: 'Mercado Reconquista',
-    address: 'Rivadavia 78, Reconquista',
-    phone: '+54 348 321-0098',
-    catalogUrl: '/catalogs/mercado-reconquista.pdf',
-  },
-]
+import { obtenerLocales } from '../../services/encomiendasService'
 
 function ComerciosAdheridos() {
+  const [locales, setLocales] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    let isActive = true
+
+    obtenerLocales()
+      .then((items) => {
+        if (isActive) setLocales(items)
+      })
+      .catch((loadError) => {
+        if (isActive) setError(loadError.message)
+      })
+      .finally(() => {
+        if (isActive) setLoading(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
+
   return (
     <div className={styles.page}>
       <section className={styles.header}>
@@ -42,20 +46,25 @@ function ComerciosAdheridos() {
             </tr>
           </thead>
           <tbody>
-            {comerciosAdheridos.map((local) => (
-              <tr key={local.name}>
-                <td>{local.name}</td>
-                <td>{local.address}</td>
-                <td>{local.phone}</td>
+            {loading && <tr><td colSpan="4">Cargando locales...</td></tr>}
+            {error && <tr><td colSpan="4" role="alert">{error}</td></tr>}
+            {!loading && !error && locales.length === 0 && (
+              <tr><td colSpan="4">No hay locales adheridos disponibles.</td></tr>
+            )}
+            {locales.map((local) => (
+              <tr key={local.id}>
+                <td>{local.nombre}</td>
+                <td>{local.direccion}</td>
+                <td>{local.telefono}</td>
                 <td>
-                  <a
-                    className={styles.catalogLink}
-                    href={local.catalogUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Descargar
-                  </a>
+                  {local.catalogo_pdf ? (
+                    <a
+                      className={styles.catalogLink}
+                      href={local.catalogo_pdf}
+                      target="_blank"
+                      rel="noreferrer"
+                    >Descargar</a>
+                  ) : 'Sin catálogo'}
                 </td>
               </tr>
             ))}

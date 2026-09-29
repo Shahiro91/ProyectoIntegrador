@@ -1,6 +1,14 @@
 from django.contrib import admin
 
-from .models import Local, Reserva, SolicitudEncomienda, Viaje
+from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+
+
+@admin.register(Consulta)
+class ConsultaAdmin(admin.ModelAdmin):
+	list_display = ('nombre', 'celular', 'email', 'fecha_creacion')
+	list_filter = ('fecha_creacion',)
+	search_fields = ('nombre', 'celular', 'email', 'mensaje')
+	readonly_fields = ('nombre', 'email', 'celular', 'mensaje', 'fecha_creacion')
 
 
 @admin.register(Local)

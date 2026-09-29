@@ -9,6 +9,7 @@ const menuItems = [
   { label: 'Encomiendas', path: '/admin/encomiendas' },
   { label: 'Locales', path: '/admin/locales' },
   { label: 'Clientes', path: '/admin/clientes' },
+  { label: 'Consultas', path: '/admin/consultas' },
 ]
 
 function Sidebar() {

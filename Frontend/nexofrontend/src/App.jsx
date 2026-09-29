@@ -9,6 +9,7 @@ import ComprarPasaje from './Components/ComprarPasajes/selectorAsiento'
 import ComerciosAdheridos from './Components/Comercios/ComerciosAdheridos'
 import Viajes from './pages/Admin/Viajes'
 import Calendario from './pages/Admin/Calendario'
+import Consultas from './pages/Admin/Consultas'
 import './App.css'
 
 function App() {
@@ -61,6 +62,15 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <Calendario />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/consultas"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Consultas />
               </ProtectedRoute>
             }
           />

@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
 from .models import Reserva, Viaje, SolicitudEncomienda
@@ -35,7 +37,7 @@ class ViajeService:
 
 
 class EncomiendaService:
-    PESO_MAXIMO_KG = 30.0
+    PESO_MAXIMO_KG = Decimal('30.00')
 
     @classmethod
     def solicitar_encomienda(cls, cliente, datos_envio):

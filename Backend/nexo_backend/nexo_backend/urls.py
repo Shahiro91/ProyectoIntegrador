@@ -20,14 +20,25 @@ from django.conf.urls.static import static
 from django.urls import include, path
 from rest_framework.routers import DefaultRouter
 
-from api.views import ReservaViewSet, ViajeViewSet
+from api.views import (
+    ConsultaViewSet,
+    LocalViewSet,
+    ReservaViewSet,
+    SolicitudEncomiendaViewSet,
+    ViajeViewSet,
+    csrf_token,
+)
 
 router = DefaultRouter()
+router.register('consultas', ConsultaViewSet, basename='consulta')
+router.register('locales', LocalViewSet, basename='local')
 router.register('viajes', ViajeViewSet, basename='viaje')
 router.register('reservas', ReservaViewSet, basename='reserva')
+router.register('encomiendas', SolicitudEncomiendaViewSet, basename='encomienda')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('api/csrf/', csrf_token, name='csrf-token'),
     path('api/', include(router.urls)),
 ]
 
