@@ -43,11 +43,15 @@ class EncomiendaService:
     def solicitar_encomienda(cls, cliente, datos_envio):
         """Valida límites de peso y crea la solicitud de envío"""
         peso = datos_envio.get('peso_kg', 0)
+        local = datos_envio.get('local')
         
         if peso > cls.PESO_MAXIMO_KG:
             raise ValidationError(f"El peso excede el límite permitido de {cls.PESO_MAXIMO_KG}kg.")
         
         return SolicitudEncomienda.objects.create(
             cliente=cliente,
+            local_nombre=local.nombre if local else '',
+            local_direccion=local.direccion if local else '',
+            local_telefono=local.telefono if local else '',
             **datos_envio
         )

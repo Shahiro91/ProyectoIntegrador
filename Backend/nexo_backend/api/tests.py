@@ -131,6 +131,97 @@ class CrearReservaTests(TestCase):
 		self.assertEqual(asiento_fuera_de_rango.status_code, 400)
 
 
+class CrearLocalTests(TestCase):
+	def setUp(self):
+		self.datos = {
+			'nombre': 'Local de prueba para crear',
+			'direccion': 'Av. 9 de Julio 123, Resistencia',
+			'telefono': '+54 362 123-4567',
+		}
+		self.local = Local.objects.create(
+			nombre='Local existente para editar',
+			direccion='Calle 1',
+		)
+
+	def test_usuario_comun_no_puede_crear_local(self):
+		cliente = get_user_model().objects.create_user(username='cliente', password='password')
+		self.client.force_login(cliente)
+		cantidad_locales = Local.objects.count()
+
+		response = self.client.post(reverse('local-list'), data=self.datos)
+
+		self.assertEqual(response.status_code, 403)
+		self.assertEqual(Local.objects.count(), cantidad_locales)
+
+	def test_administrador_puede_crear_local(self):
+		administrador = get_user_model().objects.create_user(
+			username='admin',
+			password='password',
+			is_staff=True,
+		)
+		self.client.force_login(administrador)
+
+		response = self.client.post(reverse('local-list'), data=self.datos)
+
+		self.assertEqual(response.status_code, 201)
+		self.assertTrue(Local.objects.filter(nombre=self.datos['nombre']).exists())
+
+	def test_usuario_comun_no_puede_editar_ni_eliminar_local(self):
+		cliente = get_user_model().objects.create_user(username='cliente', password='password')
+		self.client.force_login(cliente)
+
+		edicion = self.client.patch(reverse('local-detail', args=[self.local.id]), data={'nombre': 'Otro nombre'})
+		eliminacion = self.client.delete(reverse('local-detail', args=[self.local.id]))
+
+		self.assertEqual(edicion.status_code, 403)
+		self.assertEqual(eliminacion.status_code, 403)
+		self.assertTrue(Local.objects.filter(pk=self.local.id).exists())
+
+	def test_administrador_puede_editar_local(self):
+		administrador = get_user_model().objects.create_user(
+			username='admin',
+			password='password',
+			is_staff=True,
+		)
+		self.client.force_login(administrador)
+
+		response = self.client.patch(
+			reverse('local-detail', args=[self.local.id]),
+			data='{"nombre": "Nombre actualizado"}',
+			content_type='application/json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.local.refresh_from_db()
+		self.assertEqual(self.local.nombre, 'Nombre actualizado')
+
+	def test_administrador_puede_eliminar_local_sin_borrar_solicitudes(self):
+		cliente = get_user_model().objects.create_user(username='cliente', password='password')
+		solicitud = SolicitudEncomienda.objects.create(
+			cliente=cliente,
+			local=self.local,
+			origen='Resistencia',
+			destino='Reconquista',
+			nombre_destinatario='María Pérez',
+			telefono_destinatario='+54 9 362 555-1234',
+			peso_kg='2.50',
+			tamano='Mediano',
+		)
+		administrador = get_user_model().objects.create_user(
+			username='admin',
+			password='password',
+			is_staff=True,
+		)
+		self.client.force_login(administrador)
+
+		response = self.client.delete(reverse('local-detail', args=[self.local.id]))
+
+		self.assertEqual(response.status_code, 204)
+		self.assertFalse(Local.objects.filter(pk=self.local.id).exists())
+		solicitud.refresh_from_db()
+		self.assertIsNone(solicitud.local)
+
+
 class SolicitudEncomiendaTests(TestCase):
 	def setUp(self):
 		self.cliente = get_user_model().objects.create_user(username='cliente', password='password')
@@ -170,6 +261,16 @@ class SolicitudEncomiendaTests(TestCase):
 		solicitud = SolicitudEncomienda.objects.get()
 		self.assertEqual(solicitud.cliente, self.cliente)
 		self.assertEqual(solicitud.local, self.local)
+		self.assertEqual(solicitud.local_nombre, self.local.nombre)
+		self.assertEqual(solicitud.local_direccion, self.local.direccion)
+		self.assertEqual(solicitud.local_telefono, self.local.telefono)
+
+		self.local.delete()
+		solicitud.refresh_from_db()
+		self.assertIsNone(solicitud.local)
+		self.assertEqual(solicitud.local_nombre, 'La Tiendita')
+		self.assertEqual(solicitud.local_direccion, 'Av. 9 de Julio 123, Resistencia')
+		self.assertEqual(solicitud.local_telefono, '+54 362 123-4567')
 
 	def test_rechaza_peso_superior_al_limite(self):
 		self.client.force_login(self.cliente)

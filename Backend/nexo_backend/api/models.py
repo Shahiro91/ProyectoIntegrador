@@ -69,6 +69,9 @@ class SolicitudEncomienda(models.Model):
 
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     local = models.ForeignKey(Local, on_delete=models.SET_NULL, null=True, blank=True)
+    local_nombre = models.CharField(max_length=150, blank=True, default='')
+    local_direccion = models.CharField(max_length=255, blank=True, default='')
+    local_telefono = models.CharField(max_length=50, blank=True, default='')
     origen = models.CharField(max_length=150)
     destino = models.CharField(max_length=150)
     nombre_destinatario = models.CharField(max_length=150)

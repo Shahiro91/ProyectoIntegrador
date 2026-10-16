@@ -140,6 +140,9 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'local',
+            'local_nombre',
+            'local_direccion',
+            'local_telefono',
             'origen',
             'destino',
             'nombre_destinatario',
@@ -149,7 +152,14 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_solicitud',
         )
-        read_only_fields = ('id', 'estado', 'fecha_solicitud')
+        read_only_fields = (
+            'id',
+            'local_nombre',
+            'local_direccion',
+            'local_telefono',
+            'estado',
+            'fecha_solicitud',
+        )
 
     def create(self, validated_data):
         cliente = validated_data.pop('cliente')

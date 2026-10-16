@@ -93,10 +93,16 @@ def cerrar_sesion(request):
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
-class LocalViewSet(viewsets.ReadOnlyModelViewSet):
+class LocalViewSet(viewsets.ModelViewSet):
     queryset = Local.objects.all().order_by('nombre')
     serializer_class = LocalSerializer
     permission_classes = [AllowAny]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny()]
+        return [IsAdminUser()]
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
