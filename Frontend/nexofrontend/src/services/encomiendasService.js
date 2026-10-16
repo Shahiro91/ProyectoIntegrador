@@ -12,6 +12,72 @@ export async function obtenerLocales() {
   return response.json()
 }
 
+async function obtenerTokenCsrfSeguro() {
+  if (!obtenerTokenCsrf()) {
+    const response = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' })
+    if (!response.ok) throw new Error('No se pudo iniciar una sesión segura.')
+  }
+
+  const csrfToken = obtenerTokenCsrf()
+  if (!csrfToken) throw new Error('No se recibió el token de seguridad.')
+  return csrfToken
+}
+
+function mensajeError(response, fallback) {
+  return response?.detail
+    ?? Object.values(response ?? {}).flat(Infinity).find((value) => typeof value === 'string')
+    ?? fallback
+}
+
+async function guardarLocal(id, datos) {
+  const csrfToken = await obtenerTokenCsrfSeguro()
+  const formData = new FormData()
+  formData.append('nombre', datos.nombre)
+  formData.append('direccion', datos.direccion)
+  formData.append('telefono', datos.telefono)
+  if (datos.catalogo_pdf) formData.append('catalogo_pdf', datos.catalogo_pdf)
+
+  const url = id ? `${API_URL}/api/locales/${id}/` : `${API_URL}/api/locales/`
+  const response = await fetch(url, {
+    method: id ? 'PATCH' : 'POST',
+    credentials: 'include',
+    headers: {
+      Accept: 'application/json',
+      'X-CSRFToken': csrfToken,
+    },
+    body: formData,
+  })
+  const result = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(mensajeError(result, 'No se pudo guardar el local.'))
+  }
+
+  return result
+}
+
+export function crearLocal(datos) {
+  return guardarLocal(null, datos)
+}
+
+export function actualizarLocal(id, datos) {
+  return guardarLocal(id, datos)
+}
+
+export async function eliminarLocal(id) {
+  const csrfToken = await obtenerTokenCsrfSeguro()
+  const response = await fetch(`${API_URL}/api/locales/${id}/`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: { 'X-CSRFToken': csrfToken },
+  })
+  const result = await response.json().catch(() => null)
+
+  if (!response.ok) {
+    throw new Error(mensajeError(result, 'No se pudo eliminar el local.'))
+  }
+}
+
 function obtenerTokenCsrf() {
   return document.cookie
     .split('; ')

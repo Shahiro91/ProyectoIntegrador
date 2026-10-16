@@ -10,6 +10,7 @@ import ComerciosAdheridos from './Components/Comercios/ComerciosAdheridos'
 import Viajes from './pages/Admin/Viajes'
 import Calendario from './pages/Admin/Calendario'
 import Consultas from './pages/Admin/Consultas'
+import Locales from './pages/Admin/Locales'
 import './App.css'
 
 function App() {
@@ -71,6 +72,15 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['admin']}>
                 <Consultas />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/locales"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Locales />
               </ProtectedRoute>
             }
           />
