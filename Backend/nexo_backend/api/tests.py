@@ -3,6 +3,7 @@ from datetime import date, time, timedelta
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.utils import timezone
 
 from nexo_backend.Clientes.models import Cliente
 
@@ -291,12 +292,78 @@ class ConsultaTests(TestCase):
 				'email': 'ana@example.com',
 				'celular': '+54 9 362 555-1234',
 				'mensaje': 'Quiero consultar por un envío.',
+				'estado': Consulta.Estado.RESUELTA,
 			},
 			content_type='application/json',
 		)
 
 		self.assertEqual(response.status_code, 201)
 		self.assertEqual(Consulta.objects.get().celular, '+54 9 362 555-1234')
+		self.assertEqual(Consulta.objects.get().estado, Consulta.Estado.PENDIENTE)
+
+	def test_solo_administrador_puede_cambiar_estado_y_listado_prioriza_pendientes_antiguas(self):
+		pendiente_antigua = Consulta.objects.create(
+			nombre='Ana',
+			celular='123',
+			mensaje='Consulta antigua.',
+		)
+		pendiente_nueva = Consulta.objects.create(
+			nombre='Bea',
+			celular='456',
+			mensaje='Consulta nueva.',
+		)
+		resuelta = Consulta.objects.create(
+			nombre='Ceci',
+			celular='789',
+			mensaje='Consulta resuelta.',
+			estado=Consulta.Estado.RESUELTA,
+		)
+		ahora = timezone.now()
+		Consulta.objects.filter(id=pendiente_antigua.id).update(
+			fecha_creacion=ahora - timedelta(days=2),
+		)
+		Consulta.objects.filter(id=pendiente_nueva.id).update(
+			fecha_creacion=ahora - timedelta(days=1),
+		)
+		Consulta.objects.filter(id=resuelta.id).update(fecha_creacion=ahora - timedelta(days=3))
+		cliente = get_user_model().objects.create_user(username='cliente')
+		self.client.force_login(cliente)
+
+		response_cliente = self.client.patch(
+			reverse('consulta-detail', args=[pendiente_antigua.id]),
+			data={'estado': Consulta.Estado.RESUELTA},
+			content_type='application/json',
+		)
+
+		self.assertEqual(response_cliente.status_code, 403)
+		pendiente_antigua.refresh_from_db()
+		self.assertEqual(pendiente_antigua.estado, Consulta.Estado.PENDIENTE)
+
+		administrador = get_user_model().objects.create_user(
+			username='admin',
+			is_staff=True,
+		)
+		self.client.force_login(administrador)
+		response_admin = self.client.get(reverse('consulta-list'))
+		self.assertEqual(
+			[item['id'] for item in response_admin.json()],
+			[pendiente_antigua.id, pendiente_nueva.id, resuelta.id],
+		)
+
+		response_cambio = self.client.patch(
+			reverse('consulta-detail', args=[pendiente_antigua.id]),
+			data={'estado': Consulta.Estado.RESUELTA},
+			content_type='application/json',
+		)
+
+		self.assertEqual(response_cambio.status_code, 200)
+		pendiente_antigua.refresh_from_db()
+		self.assertEqual(pendiente_antigua.estado, Consulta.Estado.RESUELTA)
+		response_reordenado = self.client.get(reverse('consulta-list'))
+		self.assertEqual(
+			[item['id'] for item in response_reordenado.json()],
+			[pendiente_nueva.id, resuelta.id, pendiente_antigua.id],
+		)
 
 	def test_listado_de_consultas_requiere_staff(self):
 		consulta = Consulta.objects.create(

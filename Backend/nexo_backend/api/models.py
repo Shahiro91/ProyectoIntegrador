@@ -91,10 +91,19 @@ class SolicitudEncomienda(models.Model):
 
 
 class Consulta(models.Model):
+    class Estado(models.TextChoices):
+        PENDIENTE = 'pendiente', 'Pendiente'
+        RESUELTA = 'resuelta', 'Resuelta'
+
     nombre = models.CharField(max_length=150)
     email = models.EmailField(blank=True)
     celular = models.CharField(max_length=50)
     mensaje = models.TextField()
+    estado = models.CharField(
+        max_length=10,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE,
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

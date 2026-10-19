@@ -158,10 +158,12 @@ class SolicitudEncomiendaViewSet(
 class ConsultaViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = ConsultaSerializer
-    queryset = Consulta.objects.all().order_by('-fecha_creacion')
+    queryset = Consulta.objects.all().order_by('estado', 'fecha_creacion', 'id')
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_permissions(self):
         if self.action == 'create':
