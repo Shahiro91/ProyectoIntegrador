@@ -95,6 +95,9 @@ class SolicitudEncomienda(models.Model):
         blank=True,
         related_name='solicitudes',
     )
+    local_nombre = models.CharField(max_length=150, blank=True, default='')
+    local_direccion = models.CharField(max_length=255, blank=True, default='')
+    local_telefono = models.CharField(max_length=50, blank=True, default='')
     origen = models.CharField(max_length=150)
     destino = models.CharField(max_length=150)
     nombre_destinatario = models.CharField(max_length=150)
@@ -114,10 +117,19 @@ class SolicitudEncomienda(models.Model):
 
 
 class Consulta(models.Model):
+    class Estado(models.TextChoices):
+        PENDIENTE = 'pendiente', 'Pendiente'
+        RESUELTA = 'resuelta', 'Resuelta'
+
     nombre = models.CharField(max_length=150)
     email = models.EmailField(blank=True)
     celular = models.CharField(max_length=50)
     mensaje = models.TextField()
+    estado = models.CharField(
+        max_length=10,
+        choices=Estado.choices,
+        default=Estado.PENDIENTE,
+    )
     fecha_creacion = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

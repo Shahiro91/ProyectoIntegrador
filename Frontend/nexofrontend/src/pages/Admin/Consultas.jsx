@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import Sidebar from '../../Components/Admin/Sidebar'
-import { obtenerConsultas } from '../../services/consultasService'
+import { actualizarEstadoConsulta, obtenerConsultas } from '../../services/consultasService'
 import styles from './Consultas.module.css'
 
 const dateFormatter = new Intl.DateTimeFormat('es-AR', {
@@ -12,7 +12,9 @@ function Consultas() {
   const [consultas, setConsultas] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [errorActualizacion, setErrorActualizacion] = useState('')
   const [reloadKey, setReloadKey] = useState(0)
+  const [actualizandoId, setActualizandoId] = useState(null)
 
   useEffect(() => {
     let isActive = true
@@ -32,6 +34,26 @@ function Consultas() {
       isActive = false
     }
   }, [reloadKey])
+
+  async function cambiarEstado(consultaId, estado) {
+    setActualizandoId(consultaId)
+    setErrorActualizacion('')
+
+    try {
+      const consultaActualizada = await actualizarEstadoConsulta(consultaId, estado)
+      setConsultas((current) => current
+        .map((consulta) => consulta.id === consultaId ? consultaActualizada : consulta)
+        .sort((left, right) => (
+          left.estado.localeCompare(right.estado)
+          || new Date(left.fecha_creacion) - new Date(right.fecha_creacion)
+          || left.id - right.id
+        )))
+    } catch (updateError) {
+      setErrorActualizacion(updateError.message)
+    } finally {
+      setActualizandoId(null)
+    }
+  }
 
   return (
     <div className={styles.page}>
@@ -53,6 +75,9 @@ function Consultas() {
         </header>
 
         <section className={styles.listSection} aria-label="Lista de consultas recibidas">
+          {errorActualizacion && (
+            <p className={styles.error} role="alert">{errorActualizacion}</p>
+          )}
           {loading && <p className={styles.message}>Cargando consultas...</p>}
           {error && <p className={styles.error} role="alert">{error}</p>}
           {!loading && !error && consultas.length === 0 && (
@@ -68,6 +93,7 @@ function Consultas() {
                     <th>Celular</th>
                     <th>Email</th>
                     <th>Consulta</th>
+                    <th>Estado</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -82,6 +108,17 @@ function Consultas() {
                       </td>
                       <td>{consulta.email || 'No indicó email'}</td>
                       <td className={styles.messageCell}>{consulta.mensaje}</td>
+                      <td>
+                        <select
+                          aria-label={`Estado de la consulta de ${consulta.nombre}`}
+                          value={consulta.estado}
+                          disabled={actualizandoId === consulta.id}
+                          onChange={(event) => cambiarEstado(consulta.id, event.target.value)}
+                        >
+                          <option value="pendiente">Pendiente</option>
+                          <option value="resuelta">Resuelta</option>
+                        </select>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

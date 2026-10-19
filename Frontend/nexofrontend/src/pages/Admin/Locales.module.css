@@ -1,0 +1,11 @@
+.page {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f2f6;
+  color: #111827;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}

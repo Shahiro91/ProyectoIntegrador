@@ -149,6 +149,8 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             'local_nombre',
             'cliente_nombre',
             'jornada_encomienda',
+            'local_direccion',
+            'local_telefono',
             'origen',
             'destino',
             'nombre_destinatario',
@@ -158,7 +160,14 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             'estado',
             'fecha_solicitud',
         )
-        read_only_fields = ('id', 'estado', 'fecha_solicitud')
+        read_only_fields = (
+            'id',
+            'local_nombre',
+            'local_direccion',
+            'local_telefono',
+            'estado',
+            'fecha_solicitud',
+        )
 
     def create(self, validated_data):
         cliente = validated_data.pop('cliente')
@@ -197,5 +206,14 @@ class JornadaEncomiendaSerializer(serializers.ModelSerializer):
 class ConsultaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Consulta
-        fields = ('id', 'nombre', 'email', 'celular', 'mensaje', 'fecha_creacion')
-        read_only_fields = ('id', 'fecha_creacion')
+        fields = ('id', 'nombre', 'email', 'celular', 'mensaje', 'estado', 'fecha_creacion')
+        read_only_fields = ('id', 'estado', 'fecha_creacion')
+
+    def get_fields(self):
+        fields = super().get_fields()
+        if self.context['request'].method == 'PATCH':
+            for name, field in fields.items():
+                if name != 'estado':
+                    field.read_only = True
+            fields['estado'].read_only = False
+        return fields
