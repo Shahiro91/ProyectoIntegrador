@@ -11,15 +11,17 @@
 }
 
 .brand {
+  width: 100%;
   margin-bottom: 32px;
+  text-align: center;
 }
 
 .logoImage {
   display: block;
   width: 100%;
-  max-width: 180px;
+  max-width: 145px;
   height: auto;
-  margin-bottom: 14px;
+  margin: 0 auto 14px;
 }
 
 .tagline {

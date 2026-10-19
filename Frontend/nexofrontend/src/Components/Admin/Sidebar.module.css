@@ -8,27 +8,17 @@
   color: #fff;
 }
 
-.logoMark {
-  display: grid;
-  width: 82px;
-  height: 82px;
-  place-items: center;
-  margin-bottom: 4px;
-  border: 3px solid #fff;
-  border-radius: 50%;
-  font-size: 3.4rem;
-  font-weight: 800;
-  line-height: 1;
-}
-
-.brand {
-  margin: 0;
-  font-size: 1.9rem;
-  font-weight: 800;
+.logoImage {
+  display: block;
+  width: 100%;
+  max-width: 150px;
+  height: 102px;
+  margin-bottom: 12px;
+  object-fit: contain;
 }
 
 .brandDescription {
-  margin: 16px 0 26px;
+  margin: 0 0 26px;
   font-size: 0.66rem;
   font-weight: 700;
   text-align: center;
@@ -79,8 +69,7 @@
     padding: 20px;
   }
 
-  .logoMark,
-  .brand,
+  .logoImage,
   .brandDescription {
     display: none;
   }

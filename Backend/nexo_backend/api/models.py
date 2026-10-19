@@ -60,6 +60,25 @@ class Reserva(models.Model):
         ]
 
 
+class JornadaEncomienda(models.Model):
+    fecha = models.DateField()
+    horario = models.TimeField()
+    origen = models.CharField(max_length=150)
+    destino = models.CharField(max_length=150)
+    capacidad_kg = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        default=Decimal('500.00'),
+        validators=[MinValueValidator(Decimal('0.01'))],
+    )
+
+    class Meta:
+        ordering = ('fecha', 'horario')
+
+    def __str__(self):
+        return f'{self.fecha} {self.horario}: {self.origen} -> {self.destino}'
+
+
 class SolicitudEncomienda(models.Model):
     class Estado(models.TextChoices):
         PENDIENTE = 'PENDIENTE', 'Pendiente'
@@ -69,6 +88,13 @@ class SolicitudEncomienda(models.Model):
 
     cliente = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     local = models.ForeignKey(Local, on_delete=models.SET_NULL, null=True, blank=True)
+    jornada_encomienda = models.ForeignKey(
+        JornadaEncomienda,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='solicitudes',
+    )
     local_nombre = models.CharField(max_length=150, blank=True, default='')
     local_direccion = models.CharField(max_length=255, blank=True, default='')
     local_telefono = models.CharField(max_length=50, blank=True, default='')

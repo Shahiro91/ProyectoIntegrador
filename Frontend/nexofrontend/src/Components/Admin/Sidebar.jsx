@@ -1,5 +1,6 @@
 import { useAuth } from '../../context/useAuth'
 import { useLocation, useNavigate } from 'react-router-dom'
+import nexoLogo from '../../assets/logo.png'
 import styles from './Sidebar.module.css'
 
 const menuItems = [
@@ -19,10 +20,7 @@ function Sidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.logoMark} aria-label="Nexo">
-        <span>N</span>
-      </div>
-      <p className={styles.brand}>Nexo</p>
+      <img className={styles.logoImage} src={nexoLogo} alt="Nexo" />
       <p className={styles.brandDescription}>Viajes, encomiendas y pedidos.</p>
 
       <nav className={styles.navigation} aria-label="Navegación de administración">

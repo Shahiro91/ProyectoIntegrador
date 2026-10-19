@@ -1,12 +1,15 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model, password_validation
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 from rest_framework import serializers
 
 from nexo_backend.Clientes.models import Cliente
 
-from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+from .models import Consulta, JornadaEncomienda, Local, Reserva, SolicitudEncomienda, Viaje
 from .services import EncomiendaService, ViajeService
 
 
@@ -134,6 +137,9 @@ class ReservaSerializer(serializers.ModelSerializer):
 class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
     local = serializers.PrimaryKeyRelatedField(queryset=Local.objects.all())
     tamano = serializers.ChoiceField(choices=('Pequeño', 'Mediano', 'Grande'))
+    cliente_nombre = serializers.SerializerMethodField()
+    local_nombre = serializers.CharField(source='local.nombre', read_only=True)
+    jornada_encomienda = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = SolicitudEncomienda
@@ -141,6 +147,8 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             'id',
             'local',
             'local_nombre',
+            'cliente_nombre',
+            'jornada_encomienda',
             'local_direccion',
             'local_telefono',
             'origen',
@@ -167,6 +175,32 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             return EncomiendaService.solicitar_encomienda(cliente, validated_data)
         except DjangoValidationError as error:
             raise serializers.ValidationError({'peso_kg': error.messages}) from error
+
+    def get_cliente_nombre(self, solicitud):
+        return solicitud.cliente.get_full_name() or solicitud.cliente.get_username()
+
+
+class JornadaEncomiendaSerializer(serializers.ModelSerializer):
+    horario = serializers.TimeField(format='%H:%M')
+    peso_asignado = serializers.SerializerMethodField()
+    solicitudes = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+
+    class Meta:
+        model = JornadaEncomienda
+        fields = (
+            'id',
+            'fecha',
+            'horario',
+            'origen',
+            'destino',
+            'capacidad_kg',
+            'peso_asignado',
+            'solicitudes',
+        )
+        read_only_fields = ('id', 'peso_asignado', 'solicitudes')
+
+    def get_peso_asignado(self, jornada):
+        return jornada.solicitudes.aggregate(total=Sum('peso_kg'))['total'] or Decimal('0.00')
 
 
 class ConsultaSerializer(serializers.ModelSerializer):

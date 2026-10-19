@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+from .models import Consulta, JornadaEncomienda, Local, Reserva, SolicitudEncomienda, Viaje
 
 
 @admin.register(Consulta)
@@ -34,7 +34,14 @@ class ReservaAdmin(admin.ModelAdmin):
 
 @admin.register(SolicitudEncomienda)
 class SolicitudEncomiendaAdmin(admin.ModelAdmin):
-	list_display = ('cliente', 'origen', 'destino', 'estado', 'peso_kg', 'fecha_solicitud')
+	list_display = ('cliente', 'origen', 'destino', 'jornada_encomienda', 'estado', 'peso_kg', 'fecha_solicitud')
 	list_filter = ('estado', 'fecha_solicitud', 'origen', 'destino')
 	search_fields = ('cliente__username', 'cliente__email', 'nombre_destinatario', 'destino')
 	list_select_related = ('cliente', 'local')
+
+
+@admin.register(JornadaEncomienda)
+class JornadaEncomiendaAdmin(admin.ModelAdmin):
+	list_display = ('fecha', 'horario', 'origen', 'destino', 'capacidad_kg')
+	list_filter = ('fecha', 'destino')
+	search_fields = ('origen', 'destino')
