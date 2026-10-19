@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
+import nexoLogo from '../../assets/logo.png'
 import styles from './Login.module.css'
 
 function Login() {
@@ -46,7 +47,7 @@ function Login() {
     <div className={styles.page}>
       <section className={styles.banner}>
         <div className={styles.bannerContent}>
-          <p className={styles.brand}>Nexo</p>
+          <img className={styles.logoImage} src={nexoLogo} alt="Nexo" />
           <h1 className={styles.slogan}>Conectamos ciudades. Acercamos lo que necesitás.</h1>
           <p className={styles.tagline}>
             Viajes, encomiendas y pedidos entre Resistencia, Corrientes y más.

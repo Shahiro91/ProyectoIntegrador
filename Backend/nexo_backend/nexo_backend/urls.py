@@ -22,6 +22,7 @@ from rest_framework.routers import DefaultRouter
 
 from api.views import (
     ConsultaViewSet,
+    JornadaEncomiendaViewSet,
     LocalViewSet,
     ReservaViewSet,
     SolicitudEncomiendaViewSet,
@@ -35,6 +36,7 @@ from api.views import (
 
 router = DefaultRouter()
 router.register('consultas', ConsultaViewSet, basename='consulta')
+router.register('jornadas-encomienda', JornadaEncomiendaViewSet, basename='jornada-encomienda')
 router.register('locales', LocalViewSet, basename='local')
 router.register('viajes', ViajeViewSet, basename='viaje')
 router.register('reservas', ReservaViewSet, basename='reserva')

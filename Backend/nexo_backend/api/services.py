@@ -2,7 +2,9 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError, transaction
-from .models import Reserva, Viaje, SolicitudEncomienda
+from django.db.models import Sum
+
+from .models import JornadaEncomienda, Reserva, SolicitudEncomienda, Viaje
 
 class ViajeService:
     @staticmethod
@@ -38,6 +40,30 @@ class ViajeService:
 
 class EncomiendaService:
     PESO_MAXIMO_KG = Decimal('30.00')
+
+    @classmethod
+    @transaction.atomic
+    def asignar_a_jornada(cls, solicitud_id, jornada_id):
+        solicitud = SolicitudEncomienda.objects.select_for_update().get(pk=solicitud_id)
+
+        if jornada_id is None:
+            solicitud.jornada_encomienda = None
+            solicitud.save(update_fields=['jornada_encomienda'])
+            return solicitud
+
+        jornada = JornadaEncomienda.objects.select_for_update().get(pk=jornada_id)
+        peso_actual = jornada.solicitudes.exclude(pk=solicitud.pk).aggregate(
+            total=Sum('peso_kg'),
+        )['total'] or Decimal('0.00')
+
+        if peso_actual + solicitud.peso_kg > jornada.capacidad_kg:
+            raise ValidationError(
+                f'La carga supera la capacidad disponible de {jornada.capacidad_kg} kg.'
+            )
+
+        solicitud.jornada_encomienda = jornada
+        solicitud.save(update_fields=['jornada_encomienda'])
+        return solicitud
 
     @classmethod
     def solicitar_encomienda(cls, cliente, datos_envio):

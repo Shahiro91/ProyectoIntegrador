@@ -1,18 +1,21 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_protect, ensure_csrf_cookie
 from rest_framework import mixins, viewsets
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
 from rest_framework.response import Response
 
 from nexo_backend.Clientes.models import Cliente
 
-from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+from .models import Consulta, JornadaEncomienda, Local, Reserva, SolicitudEncomienda, Viaje
 from .serializers import (
     ConsultaSerializer,
+    JornadaEncomiendaSerializer,
     LoginSerializer,
     LocalSerializer,
     RegistroClienteSerializer,
@@ -20,6 +23,7 @@ from .serializers import (
     SolicitudEncomiendaSerializer,
     ViajeSerializer,
 )
+from .services import EncomiendaService
 
 
 @api_view(['GET'])
@@ -141,12 +145,46 @@ class SolicitudEncomiendaViewSet(
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        return SolicitudEncomienda.objects.filter(
-            cliente=self.request.user,
-        ).select_related('local')
+        solicitudes = SolicitudEncomienda.objects.select_related(
+            'local', 'cliente', 'jornada_encomienda',
+        ).order_by('-fecha_solicitud')
+        if self.request.user.is_staff:
+            return solicitudes
+        return solicitudes.filter(cliente=self.request.user)
 
     def perform_create(self, serializer):
         serializer.save(cliente=self.request.user)
+
+    def get_permissions(self):
+        if self.action == 'asignar':
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+    @action(detail=True, methods=['patch'], url_path='asignar')
+    def asignar(self, request, pk=None):
+        jornada_id = request.data.get('jornada_encomienda')
+        if jornada_id == '':
+            return Response(
+                {'jornada_encomienda': ['El identificador de jornada no es válido.']},
+                status=400,
+            )
+        if jornada_id is not None:
+            get_object_or_404(JornadaEncomienda, pk=jornada_id)
+
+        try:
+            solicitud = EncomiendaService.asignar_a_jornada(pk, jornada_id)
+        except DjangoValidationError as error:
+            return Response({'detail': error.messages}, status=400)
+
+        return Response(self.get_serializer(solicitud).data)
+
+
+@method_decorator(ensure_csrf_cookie, name='dispatch')
+class JornadaEncomiendaViewSet(viewsets.ModelViewSet):
+    queryset = JornadaEncomienda.objects.prefetch_related('solicitudes').all()
+    serializer_class = JornadaEncomiendaSerializer
+    permission_classes = [IsAdminUser]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
 
 class ConsultaViewSet(

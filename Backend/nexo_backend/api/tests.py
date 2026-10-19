@@ -6,7 +6,7 @@ from django.urls import reverse
 
 from nexo_backend.Clientes.models import Cliente
 
-from .models import Consulta, Local, Reserva, SolicitudEncomienda, Viaje
+from .models import Consulta, JornadaEncomienda, Local, Reserva, SolicitudEncomienda, Viaje
 
 
 class ListarViajesTests(TestCase):
@@ -367,3 +367,71 @@ class AutenticacionClienteTests(TestCase):
 			HTTP_ORIGIN='http://127.0.0.1:5173',
 		)
 		self.assertEqual(response_con_token.status_code, 201)
+
+
+class JornadaEncomiendaTests(TestCase):
+	def setUp(self):
+		self.admin = get_user_model().objects.create_user(username='admin', is_staff=True)
+		self.cliente = get_user_model().objects.create_user(username='cliente')
+		self.local = Local.objects.create(nombre='Local de prueba', direccion='Calle 1')
+		self.solicitud = SolicitudEncomienda.objects.create(
+			cliente=self.cliente,
+			local=self.local,
+			origen='Resistencia',
+			destino='Reconquista, Calle 2 345',
+			nombre_destinatario='Ana Pérez',
+			telefono_destinatario='123456',
+			peso_kg='4.00',
+			tamano='Mediano',
+		)
+		self.client.force_login(self.admin)
+
+	def crear_jornada(self, capacidad='5.00'):
+		return self.client.post(
+			reverse('jornada-encomienda-list'),
+			data={
+				'fecha': (date.today() + timedelta(days=2)).isoformat(),
+				'horario': '08:30',
+				'origen': 'Resistencia',
+				'destino': 'Reconquista',
+				'capacidad_kg': capacidad,
+			},
+			content_type='application/json',
+		)
+
+	def asignar(self, jornada_id, solicitud_id=None):
+		return self.client.patch(
+			reverse('encomienda-asignar', kwargs={'pk': solicitud_id or self.solicitud.id}),
+			data={'jornada_encomienda': jornada_id},
+			content_type='application/json',
+		)
+
+	def test_admin_crea_jornada_y_asigna_solicitud_actualizando_peso(self):
+		jornada_response = self.crear_jornada()
+		self.assertEqual(jornada_response.status_code, 201)
+
+		response = self.asignar(jornada_response.json()['id'])
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json()['jornada_encomienda'], jornada_response.json()['id'])
+		self.assertEqual(
+			self.client.get(reverse('jornada-encomienda-list')).json()[0]['peso_asignado'],
+			4.0,
+		)
+
+	def test_rechaza_asignacion_que_supera_capacidad(self):
+		jornada_response = self.crear_jornada(capacidad='3.00')
+
+		response = self.asignar(jornada_response.json()['id'])
+
+		self.assertEqual(response.status_code, 400)
+		self.solicitud.refresh_from_db()
+		self.assertIsNone(self.solicitud.jornada_encomienda_id)
+
+	def test_staff_es_necesario_para_crear_jornadas(self):
+		self.client.force_login(self.cliente)
+
+		response = self.crear_jornada()
+
+		self.assertEqual(response.status_code, 403)
+		self.assertEqual(JornadaEncomienda.objects.count(), 0)

@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
+import nexoLogo from '../../assets/logo.png'
 import styles from './nav.module.css'
 
 const publicLinks = [
@@ -46,7 +47,7 @@ function Nav() {
   return (
     <aside className={styles.sidebar}>
       <div className={styles.brand}>
-        <img src="/logoNexo.png" alt="Nexo" className={styles.logoImage} />
+        <img src={nexoLogo} alt="Nexo" className={styles.logoImage} />
         <p className={styles.tagline}>Viajes, encomiendas y pedidos.</p>
       </div>
 

@@ -1,105 +1,9 @@
 import { useEffect, useState } from "react";
 import styles from "./Turnero.module.css";
 import { guardarViaje, obtenerViajes } from "../../services/viajesService";
+import { obtenerLocales } from "../../services/encomiendasService";
 
-const jornadasIniciales = {
-  "2026-09-01": {
-    tipo: "pasajeros",
-    horario: "08:00",
-    origen: "Avellaneda",
-    destino: "Reconquista",
-    ocupados: 12,
-    capacidad: 19,
-  },
-  "2026-09-02": {
-    tipo: "encomiendas",
-    horario: "10:00",
-    origen: "Avellaneda",
-    destino: "Reconquista",
-    idEncomienda: "ENC-0002",
-    idCliente: "CLI-0012",
-    idLocal: "LOC-0004",
-    estado: "Pendiente",
-    cantidadPaquetes: 4,
-    tamañoAprox: "Mediano",
-    direccionEntrega: "San Martín 1240, Reconquista",
-    costoEnvio: 8500,
-    observaciones: "Entregar por la mañana",
-    fechaEntrega: "2026-09-02",
-    pesoActual: 320,
-    pesoMaximo: 500,
-    encomiendas: [
-      {
-        idEncomienda: "ENC-0002-A",
-        idCliente: "CLI-0012",
-        idLocal: "LOC-0004",
-        cliente: "María González",
-        local: "Mercado Reconquista",
-        localidadEntrega: "Avellaneda",
-        direccionEntrega: "San Martín 1240, Avellaneda",
-        cantidadPaquetes: 2,
-        tamañoAprox: "Mediano",
-        estado: "Pendiente",
-      },
-      {
-        idEncomienda: "ENC-0002-B",
-        idCliente: "CLI-0021",
-        idLocal: "LOC-0004",
-        cliente: "Sofía Martínez",
-        local: "Mercado Reconquista",
-        localidadEntrega: "Villa Ocampo",
-        direccionEntrega: "Rivadavia 825, Villa Ocampo",
-        cantidadPaquetes: 2,
-        tamañoAprox: "Pequeño",
-        estado: "En preparación",
-      },
-    ],
-  },
-  "2026-09-04": {
-    tipo: "pasajeros",
-    horario: "08:00",
-    origen: "Villa Ocampo",
-    destino: "Reconquista",
-    ocupados: 7,
-    capacidad: 19,
-  },
-  "2026-09-05": {
-    tipo: "encomiendas",
-    horario: "10:00",
-    origen: "Reconquista",
-    destino: "Avellaneda",
-    idEncomienda: "ENC-0005",
-    idCliente: "CLI-0018",
-    idLocal: "LOC-0002",
-    estado: "En preparación",
-    cantidadPaquetes: 2,
-    tamañoAprox: "Grande",
-    direccionEntrega: "Belgrano 385, Avellaneda",
-    costoEnvio: 12000,
-    observaciones: "Llamar antes de entregar",
-    fechaEntrega: "2026-09-05",
-    pesoActual: 180,
-    pesoMaximo: 500,
-  },
-};
-
-const locales = [
-  {
-    id: "LOC-0001",
-    nombre: "La Tiendita",
-    direccion: "Av. 9 de Julio 123, Resistencia",
-  },
-  {
-    id: "LOC-0002",
-    nombre: "Delicias Corrientes",
-    direccion: "Sarmiento 455, Corrientes",
-  },
-  {
-    id: "LOC-0004",
-    nombre: "Mercado Reconquista",
-    direccion: "Rivadavia 78, Reconquista",
-  },
-];
+const jornadasIniciales = {};
 
 const clientes = [
   {
@@ -142,9 +46,12 @@ const formularioInicial = {
 };
 
 function Turnero() {
+  const hoy = new Date();
+  const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
   const [jornadas, setJornadas] = useState(jornadasIniciales);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState("2026-09-01");
-  const [mesActual, setMesActual] = useState({ año: 2026, mes: 8 });
+  const [locales, setLocales] = useState([]);
+  const [fechaSeleccionada, setFechaSeleccionada] = useState(fechaHoy);
+  const [mesActual, setMesActual] = useState({ año: hoy.getFullYear(), mes: hoy.getMonth() });
   const [modalAbierto, setModalAbierto] = useState(false);
   const [tipoFormulario, setTipoFormulario] = useState(null);
   const [fechaEnEdicion, setFechaEnEdicion] = useState(null);
@@ -176,6 +83,22 @@ function Turnero() {
           }]),
         );
         setJornadas((actuales) => ({ ...actuales, ...jornadasBackend }));
+      })
+      .catch((error) => {
+        if (isActive) setErrorGuardado(error.message);
+      });
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isActive = true;
+
+    obtenerLocales()
+      .then((localesDisponibles) => {
+        if (isActive) setLocales(localesDisponibles);
       })
       .catch((error) => {
         if (isActive) setErrorGuardado(error.message);

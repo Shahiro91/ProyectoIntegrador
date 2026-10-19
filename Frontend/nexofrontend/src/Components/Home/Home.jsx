@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/useAuth'
 import styles from './Home.module.css'
 import SolicitudEncomienda from '../Encomiendas/SolicitudEncomienda'
 import { enviarConsulta } from '../../services/consultasService'
+import { obtenerViajes } from '../../services/viajesService'
 
 const cities = ['Resistencia', 'Corrientes', 'Reconquista', 'Formosa', 'Asunción']
 
@@ -32,6 +33,13 @@ const consultaInicial = {
   mensaje: '',
 }
 
+function formatTripDate(date) {
+  return new Intl.DateTimeFormat('es-AR', {
+    dateStyle: 'medium',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T12:00:00Z`))
+}
+
 function Home() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -40,6 +48,28 @@ function Home() {
   const [enviandoConsulta, setEnviandoConsulta] = useState(false)
   const [errorConsulta, setErrorConsulta] = useState('')
   const [consultaEnviada, setConsultaEnviada] = useState(false)
+  const [viajes, setViajes] = useState([])
+  const [cargandoViajes, setCargandoViajes] = useState(true)
+  const [errorViajes, setErrorViajes] = useState('')
+
+  useEffect(() => {
+    let isActive = true
+
+    obtenerViajes()
+      .then((items) => {
+        if (isActive) setViajes(items)
+      })
+      .catch((error) => {
+        if (isActive) setErrorViajes(error.message)
+      })
+      .finally(() => {
+        if (isActive) setCargandoViajes(false)
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [])
 
   const isContactOnlyView = location.hash === '#contacto'
 
@@ -155,8 +185,17 @@ function Home() {
 
         <article className={styles.card}>
           <h3 className={styles.cardTitle}>Próximos viajes</h3>
-          <p className={styles.cardText}>Viernes: Reconquista · Domingo: Corrientes</p>
-          <span className={styles.badge}>Recepción hasta jueves 20:00</span>
+          <p className={styles.cardText}>
+            {cargandoViajes
+              ? 'Cargando viajes...'
+              : errorViajes
+                ? errorViajes
+                : viajes.length === 0
+                  ? 'Todavía no hay viajes programados.'
+                  : viajes.slice(0, 3).map((viaje) =>
+                      `${formatTripDate(viaje.fecha_salida)}: ${viaje.origen} → ${viaje.destino}, ${viaje.horario_salida}`,
+                    ).join(' · ')}
+          </p>
         </article>
 
         <article className={styles.card}>
