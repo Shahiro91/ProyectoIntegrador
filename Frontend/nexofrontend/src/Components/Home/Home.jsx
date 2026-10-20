@@ -4,7 +4,7 @@ import { useAuth } from '../../context/useAuth'
 import styles from './Home.module.css'
 import SolicitudEncomienda from '../Encomiendas/SolicitudEncomienda'
 import { enviarConsulta } from '../../services/consultasService'
-import { obtenerViajes } from '../../services/viajesService'
+import { obtenerProximosViajes } from '../../services/viajesService'
 
 const cities = ['Resistencia', 'Corrientes', 'Reconquista', 'Formosa', 'Asunción']
 
@@ -55,7 +55,7 @@ function Home() {
   useEffect(() => {
     let isActive = true
 
-    obtenerViajes()
+    obtenerProximosViajes()
       .then((items) => {
         if (isActive) setViajes(items)
       })
@@ -184,27 +184,43 @@ function Home() {
         </article>
 
         <article className={styles.card}>
-          <h3 className={styles.cardTitle}>Próximos viajes</h3>
-          <p className={styles.cardText}>
-            {cargandoViajes
-              ? 'Cargando viajes...'
-              : errorViajes
-                ? errorViajes
-                : viajes.length === 0
-                  ? 'Todavía no hay viajes programados.'
-                  : viajes.slice(0, 3).map((viaje) =>
-                      `${formatTripDate(viaje.fecha_salida)}: ${viaje.origen} → ${viaje.destino}, ${viaje.horario_salida}`,
-                    ).join(' · ')}
-          </p>
-        </article>
-
-        <article className={styles.card}>
           <h3 className={styles.cardTitle}>Servicios</h3>
           <p className={styles.cardText}>
             Encomiendas, compras por encargo, retiros y larga distancia.
           </p>
         </article>
       </div>
+
+      <section className={styles.tripsSection} aria-labelledby="titulo-proximos-viajes">
+        <div className={styles.tripsHeader}>
+          <h3 id="titulo-proximos-viajes" className={styles.howItWorksTitle}>Próximos viajes</h3>
+          <div className={styles.tripsLegend}>
+            <span className={`${styles.legendDot} ${styles.dotPasajeros}`} /> Pasajeros
+            <span className={`${styles.legendDot} ${styles.dotEncomiendas}`} /> Encomiendas
+          </div>
+        </div>
+
+        {cargandoViajes && <p className={styles.cardText}>Cargando viajes...</p>}
+        {!cargandoViajes && errorViajes && <p className={styles.cardText}>{errorViajes}</p>}
+        {!cargandoViajes && !errorViajes && viajes.length === 0 && (
+          <p className={styles.cardText}>Todavía no hay viajes programados.</p>
+        )}
+
+        <div className={styles.tripsGrid}>
+          {viajes.map((viaje) => (
+            <article
+              key={`${viaje.tipo}-${viaje.fecha}-${viaje.horario}-${viaje.origen}-${viaje.destino}`}
+              className={`${styles.tripCard} ${viaje.tipo === 'encomiendas' ? styles.tripEncomiendas : styles.tripPasajeros}`}
+            >
+              <span className={styles.tripType}>
+                {viaje.tipo === 'encomiendas' ? '📦 Encomiendas' : '🚐 Pasajeros'}
+              </span>
+              <p className={styles.tripRoute}>{viaje.origen} → {viaje.destino}</p>
+              <p className={styles.tripDate}>{formatTripDate(viaje.fecha)} · {viaje.horario} hs</p>
+            </article>
+          ))}
+        </div>
+      </section>
 
       <section className={styles.howItWorks}>
         <div className={styles.howItWorksHeader}>

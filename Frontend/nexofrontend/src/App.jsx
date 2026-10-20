@@ -11,6 +11,7 @@ import Viajes from './pages/Admin/Viajes'
 import Calendario from './pages/Admin/Calendario'
 import Consultas from './pages/Admin/Consultas'
 import Locales from './pages/Admin/Locales'
+import Clientes from './pages/Admin/Clientes'
 import './App.css'
 
 function App() {
@@ -68,6 +69,15 @@ function App() {
           />
 
           <Route
+            path="/admin/locales"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Locales />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
             path="/admin/consultas"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
@@ -77,10 +87,10 @@ function App() {
           />
 
           <Route
-            path="/admin/locales"
+            path="/admin/clientes"
             element={
               <ProtectedRoute allowedRoles={['admin']}>
-                <Locales />
+                <Clientes />
               </ProtectedRoute>
             }
           />

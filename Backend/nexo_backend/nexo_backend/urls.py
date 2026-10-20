@@ -30,6 +30,8 @@ from api.views import (
     cerrar_sesion,
     csrf_token,
     iniciar_sesion,
+    proximos_viajes,
+    listar_clientes,
     registrar_cliente,
     usuario_actual,
 )
@@ -49,6 +51,8 @@ urlpatterns = [
     path('api/auth/login/', iniciar_sesion, name='auth-login'),
     path('api/auth/me/', usuario_actual, name='auth-me'),
     path('api/auth/logout/', cerrar_sesion, name='auth-logout'),
+    path('api/proximos-viajes/', proximos_viajes, name='proximos-viajes'),
+    path('api/clientes/', listar_clientes, name='clientes'),
     path('api/', include(router.urls)),
 ]
 

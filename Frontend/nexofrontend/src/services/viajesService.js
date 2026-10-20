@@ -10,11 +10,47 @@ export async function obtenerViajes() {
   return response.json()
 }
 
+export async function obtenerProximosViajes() {
+  const response = await fetch(`${API_URL}/api/proximos-viajes/`, { credentials: 'include' })
+
+  if (!response.ok) {
+    throw new Error('No se pudieron cargar los próximos viajes.')
+  }
+
+  return response.json()
+}
+
 function obtenerTokenCsrf() {
   return document.cookie
     .split('; ')
     .find((cookie) => cookie.startsWith('csrftoken='))
     ?.split('=')[1]
+}
+
+export async function crearReserva(viajeId, numeroAsiento) {
+  let csrfToken = obtenerTokenCsrf()
+  if (!csrfToken) {
+    await obtenerViajes()
+    csrfToken = obtenerTokenCsrf()
+  }
+
+  const response = await fetch(`${API_URL}/api/reservas/`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken ?? '',
+    },
+    body: JSON.stringify({ viaje: viajeId, numero_asiento: numeroAsiento }),
+  })
+  const result = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const detail = result.detail ?? Object.values(result).flat().join(' ')
+    throw new Error(detail || `No se pudo reservar el asiento ${numeroAsiento}.`)
+  }
+
+  return result
 }
 
 export async function guardarViaje(viajeId, viaje) {

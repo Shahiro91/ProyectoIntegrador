@@ -100,6 +100,8 @@ class SolicitudEncomienda(models.Model):
     local_telefono = models.CharField(max_length=50, blank=True, default='')
     origen = models.CharField(max_length=150)
     destino = models.CharField(max_length=150)
+    localidad_destino = models.CharField(max_length=100, blank=True, default='')
+    codigo_postal_destino = models.CharField(max_length=20, blank=True, default='')
     nombre_destinatario = models.CharField(max_length=150)
     telefono_destinatario = models.CharField(max_length=50)
     peso_kg = models.DecimalField(

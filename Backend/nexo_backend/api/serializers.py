@@ -140,6 +140,8 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
     cliente_nombre = serializers.SerializerMethodField()
     local_nombre = serializers.CharField(source='local.nombre', read_only=True)
     jornada_encomienda = serializers.PrimaryKeyRelatedField(read_only=True)
+    localidad_destino = serializers.CharField(max_length=100)
+    codigo_postal_destino = serializers.CharField(max_length=20)
 
     class Meta:
         model = SolicitudEncomienda
@@ -153,6 +155,8 @@ class SolicitudEncomiendaSerializer(serializers.ModelSerializer):
             'local_telefono',
             'origen',
             'destino',
+            'localidad_destino',
+            'codigo_postal_destino',
             'nombre_destinatario',
             'telefono_destinatario',
             'peso_kg',

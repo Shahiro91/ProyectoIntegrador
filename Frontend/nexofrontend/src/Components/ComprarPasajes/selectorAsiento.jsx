@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import styles from "./ComprarPasaje.module.css";
-import { obtenerViajes } from "../../services/viajesService";
+import { crearReserva, obtenerViajes } from "../../services/viajesService";
 
 function formatDate(date) {
   return new Intl.DateTimeFormat("es-AR", {
@@ -20,6 +20,37 @@ function ComprarPasaje() {
   const [selectedTripId, setSelectedTripId] = useState("");
   const [loadingTrips, setLoadingTrips] = useState(true);
   const [tripsError, setTripsError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [reserveError, setReserveError] = useState("");
+  const [confirmation, setConfirmation] = useState(null);
+
+  const confirmReservation = async () => {
+    if (!selectedTrip || selectedSeats.length === 0 || submitting) return;
+
+    setSubmitting(true);
+    setReserveError("");
+    const reserved = [];
+    const seatsToReserve = [...selectedSeats].sort((a, b) => a - b);
+
+    try {
+      for (const seat of seatsToReserve) {
+        await crearReserva(selectedTrip.id, seat);
+        reserved.push(seat);
+      }
+      setConfirmation({ trip: selectedTrip, seats: reserved, total: reserved.length * Number(selectedTrip.precio) });
+      setSelectedSeats([]);
+    } catch (error) {
+      setReserveError(
+        reserved.length > 0
+          ? `Se reservaron las butacas ${reserved.join(", ")}, pero falló otra: ${error.message}`
+          : error.message,
+      );
+      setSelectedSeats(seatsToReserve.filter((seat) => !reserved.includes(seat)));
+    } finally {
+      setSubmitting(false);
+      obtenerViajes().then(setTrips).catch(() => {});
+    }
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -255,10 +286,15 @@ function ComprarPasaje() {
 
           <button
             className={styles["continue-button"]}
-            disabled={!selectedTrip || selectedSeats.length === 0}
+            disabled={!selectedTrip || selectedSeats.length === 0 || submitting}
+            onClick={confirmReservation}
           >
-            Continuar
+            {submitting ? "Reservando..." : "Continuar"}
           </button>
+
+          {reserveError && (
+            <p className={styles["reserve-error"]} role="alert">{reserveError}</p>
+          )}
 
           {selectedSeats.length === 0 && (
             <p className={styles["select-message"]}>
@@ -269,6 +305,33 @@ function ComprarPasaje() {
         </div>
 
       </div>
+
+      {confirmation && (
+        <div className={styles["confirm-overlay"]} role="dialog" aria-modal="true">
+          <div className={styles["confirm-card"]}>
+            <div className={styles["confirm-icon"]}>✓</div>
+            <h2>¡Reserva confirmada!</h2>
+            <p>
+              {confirmation.seats.length === 1 ? "Tu butaca" : "Tus butacas"}{" "}
+              <strong>{confirmation.seats.join(", ")}</strong> en el viaje{" "}
+              {confirmation.trip.origen} → {confirmation.trip.destino} del{" "}
+              {formatDate(confirmation.trip.fecha_salida)} a las {confirmation.trip.horario_salida} hs
+              ya {confirmation.seats.length === 1 ? "está asignada" : "están asignadas"}.
+            </p>
+            <p>
+              Podés abonar el servicio ({`$${confirmation.total.toLocaleString("es-AR")}`}) directamente al
+              chofer el día del viaje.
+            </p>
+            <button
+              type="button"
+              className={styles["continue-button"]}
+              onClick={() => navigate("/passengers")}
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
 
     </div>
   );

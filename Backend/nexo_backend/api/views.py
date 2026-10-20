@@ -47,6 +47,8 @@ def usuario_response(user):
             else (user.get_full_name() or user.username)
         ),
         'role': 'admin' if user.is_staff else 'cliente',
+        'direccion': perfil.direccion if perfil else '',
+        'codigo_postal': perfil.codigo_postal if perfil else '',
     }
 
 
@@ -191,6 +193,57 @@ class JornadaEncomiendaViewSet(viewsets.ModelViewSet):
     serializer_class = JornadaEncomiendaSerializer
     permission_classes = [IsAdminUser]
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def proximos_viajes(request):
+    """Viajes de pasajeros y jornadas de encomienda futuras, sin datos de clientes."""
+    hoy = timezone.localdate()
+    viajes = [
+        {
+            'tipo': 'pasajeros',
+            'fecha': viaje.fecha_salida,
+            'horario': viaje.horario_salida.strftime('%H:%M'),
+            'origen': viaje.origen,
+            'destino': viaje.destino,
+        }
+        for viaje in Viaje.objects.filter(fecha_salida__gte=hoy)
+    ]
+    viajes += [
+        {
+            'tipo': 'encomiendas',
+            'fecha': jornada.fecha,
+            'horario': jornada.horario.strftime('%H:%M'),
+            'origen': jornada.origen,
+            'destino': jornada.destino,
+        }
+        for jornada in JornadaEncomienda.objects.filter(fecha__gte=hoy)
+    ]
+    viajes.sort(key=lambda item: (item['fecha'], item['horario']))
+    return Response(viajes[:6])
+
+
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def listar_clientes(request):
+    clientes = Cliente.objects.select_related('usuario').filter(
+        usuario__is_staff=False,
+        usuario__is_superuser=False,
+    ).order_by('apellido', 'nombre')
+    return Response([
+        {
+            'id': cliente.id,
+            'nombre': cliente.nombre,
+            'apellido': cliente.apellido,
+            'email': cliente.email,
+            'telefono': cliente.telefono,
+            'direccion': cliente.direccion,
+            'codigo_postal': cliente.codigo_postal,
+            'fecha_registro': cliente.usuario.date_joined,
+        }
+        for cliente in clientes
+    ])
 
 
 class ConsultaViewSet(

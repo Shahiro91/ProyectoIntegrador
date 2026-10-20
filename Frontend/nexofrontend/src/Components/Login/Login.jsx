@@ -12,6 +12,7 @@ function Login() {
   const [surname, setSurname] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
   const [postalCode, setPostalCode] = useState('')
@@ -24,6 +25,11 @@ function Login() {
   async function handleSubmit(event) {
     event.preventDefault()
     setFormError(null)
+
+    if (mode === 'register' && password !== confirmPassword) {
+      setFormError('Las contraseñas no coinciden.')
+      return
+    }
 
     try {
       const session = mode === 'register'
@@ -186,6 +192,21 @@ function Login() {
                 autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
               />
             </label>
+
+            {mode === 'register' && (
+              <label className={styles.field}>
+                <span>Confirmar contraseña</span>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  placeholder="••••••••"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                />
+              </label>
+            )}
 
             {(formError || error) && (
               <p className={styles.error} role="alert">

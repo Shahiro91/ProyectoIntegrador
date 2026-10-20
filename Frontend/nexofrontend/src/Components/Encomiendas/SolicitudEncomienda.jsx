@@ -1,20 +1,33 @@
 import { useEffect, useState } from 'react'
 import styles from '../Home/Home.module.css'
+import { useAuth } from '../../context/useAuth'
 import { crearSolicitudEncomienda, obtenerLocales } from '../../services/encomiendasService'
 
 const initialForm = {
   local: '',
   origen: '',
   destino: '',
+  localidad_destino: '',
+  codigo_postal_destino: '',
   nombre_destinatario: '',
   telefono_destinatario: '',
   peso_kg: '',
   tamano: 'Mediano',
 }
 
+// Precarga los datos del registro; el usuario puede cambiarlos antes de enviar.
+function formularioInicial(user) {
+  return {
+    ...initialForm,
+    destino: user?.direccion ?? '',
+    codigo_postal_destino: user?.codigo_postal ?? '',
+  }
+}
+
 function SolicitudEncomienda() {
+  const { user } = useAuth()
   const [locales, setLocales] = useState([])
-  const [form, setForm] = useState(initialForm)
+  const [form, setForm] = useState(() => formularioInicial(user))
   const [loadingLocales, setLoadingLocales] = useState(true)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState('')
@@ -71,7 +84,7 @@ function SolicitudEncomienda() {
         peso_kg: Number(form.peso_kg),
         local: Number(form.local),
       })
-      setForm(initialForm)
+      setForm(formularioInicial(user))
       setSuccess('Solicitud enviada. Nos pondremos en contacto para coordinar la encomienda.')
     } catch (submitError) {
       setError(submitError.message)
@@ -127,8 +140,33 @@ function SolicitudEncomienda() {
               name="destino"
               value={form.destino}
               onChange={actualizarCampo}
-              placeholder="Calle, altura y localidad"
+              placeholder="Calle y altura"
               autoComplete="street-address"
+              required
+            />
+          </label>
+        </div>
+
+        <div className={styles.formRow}>
+          <label className={styles.field}>
+            <span>Localidad de destino</span>
+            <input
+              name="localidad_destino"
+              value={form.localidad_destino}
+              onChange={actualizarCampo}
+              placeholder="Localidad donde se recibe la encomienda"
+              autoComplete="address-level2"
+              required
+            />
+          </label>
+          <label className={styles.field}>
+            <span>Código postal</span>
+            <input
+              name="codigo_postal_destino"
+              value={form.codigo_postal_destino}
+              onChange={actualizarCampo}
+              placeholder="Ej: 3500"
+              autoComplete="postal-code"
               required
             />
           </label>
