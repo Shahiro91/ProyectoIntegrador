@@ -19,6 +19,50 @@ function obtenerTokenCsrf() {
     ?.split('=')[1]
 }
 
+function enviarLocal(url, method, datos) {
+  const body = new FormData()
+  body.append('nombre', datos.nombre)
+  body.append('direccion', datos.direccion)
+  body.append('telefono', datos.telefono)
+  if (datos.catalogo_pdf) body.append('catalogo_pdf', datos.catalogo_pdf)
+
+  return fetchConCsrf(url, { method, body })
+}
+
+async function fetchConCsrf(url, opciones) {
+  let csrfToken = obtenerTokenCsrf()
+  if (!csrfToken) {
+    await obtenerLocales()
+    csrfToken = obtenerTokenCsrf()
+  }
+
+  const response = await fetch(url, {
+    ...opciones,
+    credentials: 'include',
+    headers: { 'X-CSRFToken': csrfToken ?? '' },
+  })
+  const result = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const detail = result.detail ?? Object.values(result).flat().join(' ')
+    throw new Error(detail || 'No se pudo completar la operación con el local.')
+  }
+
+  return result
+}
+
+export function crearLocal(datos) {
+  return enviarLocal(`${API_URL}/api/locales/`, 'POST', datos)
+}
+
+export function actualizarLocal(id, datos) {
+  return enviarLocal(`${API_URL}/api/locales/${id}/`, 'PATCH', datos)
+}
+
+export async function eliminarLocal(id) {
+  await fetchConCsrf(`${API_URL}/api/locales/${id}/`, { method: 'DELETE' })
+}
+
 export async function crearSolicitudEncomienda(datos) {
   let csrfToken = obtenerTokenCsrf()
   if (!csrfToken) {

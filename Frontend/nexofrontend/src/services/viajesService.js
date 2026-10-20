@@ -10,6 +10,16 @@ export async function obtenerViajes() {
   return response.json()
 }
 
+export async function obtenerProximosViajes() {
+  const response = await fetch(`${API_URL}/api/proximos-viajes/`, { credentials: 'include' })
+
+  if (!response.ok) {
+    throw new Error('No se pudieron cargar los próximos viajes.')
+  }
+
+  return response.json()
+}
+
 function obtenerTokenCsrf() {
   return document.cookie
     .split('; ')

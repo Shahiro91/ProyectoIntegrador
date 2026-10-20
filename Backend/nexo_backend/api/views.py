@@ -47,6 +47,8 @@ def usuario_response(user):
             else (user.get_full_name() or user.username)
         ),
         'role': 'admin' if user.is_staff else 'cliente',
+        'direccion': perfil.direccion if perfil else '',
+        'codigo_postal': perfil.codigo_postal if perfil else '',
     }
 
 
@@ -97,10 +99,22 @@ def cerrar_sesion(request):
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
-class LocalViewSet(viewsets.ReadOnlyModelViewSet):
+class LocalViewSet(
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = Local.objects.all().order_by('nombre')
     serializer_class = LocalSerializer
-    permission_classes = [AllowAny]
+    http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+    def get_permissions(self):
+        if self.action in ('list', 'retrieve'):
+            return [AllowAny()]
+        return [IsAdminUser()]
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
@@ -185,6 +199,35 @@ class JornadaEncomiendaViewSet(viewsets.ModelViewSet):
     serializer_class = JornadaEncomiendaSerializer
     permission_classes = [IsAdminUser]
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def proximos_viajes(request):
+    """Viajes de pasajeros y jornadas de encomienda futuras, sin datos de clientes."""
+    hoy = timezone.localdate()
+    viajes = [
+        {
+            'tipo': 'pasajeros',
+            'fecha': viaje.fecha_salida,
+            'horario': viaje.horario_salida.strftime('%H:%M'),
+            'origen': viaje.origen,
+            'destino': viaje.destino,
+        }
+        for viaje in Viaje.objects.filter(fecha_salida__gte=hoy)
+    ]
+    viajes += [
+        {
+            'tipo': 'encomiendas',
+            'fecha': jornada.fecha,
+            'horario': jornada.horario.strftime('%H:%M'),
+            'origen': jornada.origen,
+            'destino': jornada.destino,
+        }
+        for jornada in JornadaEncomienda.objects.filter(fecha__gte=hoy)
+    ]
+    viajes.sort(key=lambda item: (item['fecha'], item['horario']))
+    return Response(viajes[:6])
 
 
 class ConsultaViewSet(

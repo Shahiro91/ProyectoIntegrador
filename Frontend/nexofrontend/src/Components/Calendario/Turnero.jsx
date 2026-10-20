@@ -1,27 +1,13 @@
 import { useEffect, useState } from "react";
 import styles from "./Turnero.module.css";
 import { guardarViaje, obtenerViajes } from "../../services/viajesService";
-import { obtenerLocales } from "../../services/encomiendasService";
+import {
+  guardarJornadaEncomienda,
+  obtenerJornadasEncomienda,
+  obtenerSolicitudesTurnero,
+} from "../../services/turneroEncomiendasService";
 
 const jornadasIniciales = {};
-
-const clientes = [
-  {
-    id: "CLI-0012",
-    nombre: "María González",
-    documento: "DNI 32.456.789",
-  },
-  {
-    id: "CLI-0018",
-    nombre: "Juan Rodríguez",
-    documento: "DNI 28.123.456",
-  },
-  {
-    id: "CLI-0021",
-    nombre: "Sofía Martínez",
-    documento: "DNI 35.987.654",
-  },
-];
 
 const formularioInicial = {
   fecha: "",
@@ -30,6 +16,7 @@ const formularioInicial = {
   destino: "",
   capacidad: 19,
   precio: "8500.00",
+  capacidadKg: "500",
   idEncomienda: "",
   idCliente: "",
   idLocal: "",
@@ -49,7 +36,6 @@ function Turnero() {
   const hoy = new Date();
   const fechaHoy = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}-${String(hoy.getDate()).padStart(2, "0")}`;
   const [jornadas, setJornadas] = useState(jornadasIniciales);
-  const [locales, setLocales] = useState([]);
   const [fechaSeleccionada, setFechaSeleccionada] = useState(fechaHoy);
   const [mesActual, setMesActual] = useState({ año: hoy.getFullYear(), mes: hoy.getMonth() });
   const [modalAbierto, setModalAbierto] = useState(false);
@@ -58,10 +44,6 @@ function Turnero() {
   const [formulario, setFormulario] = useState(formularioInicial);
   const [errorGuardado, setErrorGuardado] = useState("");
   const [guardando, setGuardando] = useState(false);
-  const [busquedaLocal, setBusquedaLocal] = useState("");
-  const [errorLocal, setErrorLocal] = useState("");
-  const [busquedaCliente, setBusquedaCliente] = useState("");
-  const [errorCliente, setErrorCliente] = useState("");
   const [detalleAbierto, setDetalleAbierto] = useState(false);
 
   useEffect(() => {
@@ -96,9 +78,26 @@ function Turnero() {
   useEffect(() => {
     let isActive = true;
 
-    obtenerLocales()
-      .then((localesDisponibles) => {
-        if (isActive) setLocales(localesDisponibles);
+    Promise.all([obtenerJornadasEncomienda(), obtenerSolicitudesTurnero()])
+      .then(([items, solicitudes]) => {
+        if (!isActive) return;
+        const jornadasEncomienda = Object.fromEntries(
+          items.map((item) => {
+            const envios = solicitudes.filter((solicitud) => solicitud.jornada_encomienda === item.id);
+            return [item.fecha, {
+              id: item.id,
+              tipo: "encomiendas",
+              horario: item.horario,
+              origen: item.origen,
+              destino: item.destino,
+              cantidadPaquetes: envios.length,
+              pesoActual: Number(item.peso_asignado),
+              pesoMaximo: Number(item.capacidad_kg),
+              encomiendas: envios,
+            }];
+          }),
+        );
+        setJornadas((actuales) => ({ ...jornadasEncomienda, ...actuales }));
       })
       .catch((error) => {
         if (isActive) setErrorGuardado(error.message);
@@ -113,21 +112,6 @@ function Turnero() {
 
   const diasDelMes = new Date(año, mes + 1, 0).getDate();
   const primerDia = new Date(año, mes, 1).getDay();
-
-  const resumenPaquetes = formulario.tamañoAprox === "Mixto"
-    ? {
-        pequeños: Number(formulario.paquetesPequeños) || 0,
-        medianos: Number(formulario.paquetesMedianos) || 0,
-        grandes: Number(formulario.paquetesGrandes) || 0,
-      }
-    : {
-        pequeños: formulario.tamañoAprox === "Pequeño" ? Number(formulario.cantidadPaquetes) || 0 : 0,
-        medianos: formulario.tamañoAprox === "Mediano" ? Number(formulario.cantidadPaquetes) || 0 : 0,
-        grandes: formulario.tamañoAprox === "Grande" ? Number(formulario.cantidadPaquetes) || 0 : 0,
-      };
-
-  const totalPaquetes = resumenPaquetes.pequeños + resumenPaquetes.medianos + resumenPaquetes.grandes;
-  const unidadesDeCarga = resumenPaquetes.pequeños + resumenPaquetes.medianos * 2 + resumenPaquetes.grandes * 4;
 
   // Ajustamos para que lunes sea el primer día
   const espaciosIniciales = primerDia === 0 ? 6 : primerDia - 1;
@@ -183,13 +167,7 @@ function Turnero() {
     setFormulario({
       ...formularioInicial,
       fecha: fechaSeleccionada,
-      fechaEntrega: fechaSeleccionada,
-      idEncomienda: `ENC-${String(Object.keys(jornadas).length + 1).padStart(4, "0")}`,
     });
-    setBusquedaLocal("");
-    setErrorLocal("");
-    setBusquedaCliente("");
-    setErrorCliente("");
     setModalAbierto(true);
   };
 
@@ -202,15 +180,9 @@ function Turnero() {
     setFormulario({
       ...formularioInicial,
       ...jornada,
+      capacidadKg: jornada.tipo === "encomiendas" ? String(jornada.pesoMaximo) : formularioInicial.capacidadKg,
       fecha: fechaSeleccionada,
-      fechaEntrega: jornada.fechaEntrega || fechaSeleccionada,
     });
-    const localSeleccionado = locales.find((local) => local.id === jornada.idLocal);
-    const clienteSeleccionado = clientes.find((cliente) => cliente.id === jornada.idCliente);
-    setBusquedaLocal(localSeleccionado ? localSeleccionado.nombre : "");
-    setErrorLocal("");
-    setBusquedaCliente(clienteSeleccionado ? clienteSeleccionado.nombre : "");
-    setErrorCliente("");
     setModalAbierto(true);
   };
 
@@ -224,55 +196,19 @@ function Turnero() {
     setFormulario((actual) => ({ ...actual, [name]: value }));
   };
 
-  const actualizarBusquedaLocal = (evento) => {
-    setBusquedaLocal(evento.target.value);
-    setErrorLocal("");
-    setFormulario((actual) => ({ ...actual, idLocal: "" }));
-  };
-
-  const seleccionarLocal = (local) => {
-    setBusquedaLocal(local.nombre);
-    setErrorLocal("");
-    setFormulario((actual) => ({ ...actual, idLocal: local.id }));
-  };
-
-  const actualizarBusquedaCliente = (evento) => {
-    setBusquedaCliente(evento.target.value);
-    setErrorCliente("");
-    setFormulario((actual) => ({ ...actual, idCliente: "" }));
-  };
-
-  const seleccionarCliente = (cliente) => {
-    setBusquedaCliente(cliente.nombre);
-    setErrorCliente("");
-    setFormulario((actual) => ({ ...actual, idCliente: cliente.id }));
-  };
-
   const guardarJornada = async (evento) => {
     evento.preventDefault();
 
-    if (tipoFormulario === "encomiendas" && !formulario.idLocal) {
-      setErrorLocal("Seleccioná un local de la lista para continuar.");
-      return;
-    }
-
-    if (tipoFormulario === "encomiendas" && !formulario.idCliente) {
-      setErrorCliente("Seleccioná un cliente de la lista para continuar.");
-      return;
-    }
-
-    if (tipoFormulario === "encomiendas" && totalPaquetes < 1) {
-      return;
-    }
-
     const fecha = formulario.fecha;
+    const idExistente = fechaEnEdicion && jornada?.tipo === tipoFormulario ? jornada.id : undefined;
     let viajePersistido = null;
+    let jornadaEncomienda = null;
 
-    if (tipoFormulario === "pasajeros") {
-      setGuardando(true);
-      setErrorGuardado("");
-      try {
-        viajePersistido = await guardarViaje(jornada?.id, {
+    setGuardando(true);
+    setErrorGuardado("");
+    try {
+      if (tipoFormulario === "pasajeros") {
+        viajePersistido = await guardarViaje(idExistente, {
           fecha,
           horario: formulario.horario,
           origen: formulario.origen,
@@ -280,33 +216,33 @@ function Turnero() {
           capacidad: formulario.capacidad,
           precio: formulario.precio,
         });
-      } catch (error) {
-        setErrorGuardado(error.message);
-        setGuardando(false);
-        return;
+      } else {
+        jornadaEncomienda = await guardarJornadaEncomienda(idExistente, {
+          fecha,
+          horario: formulario.horario,
+          origen: formulario.origen,
+          destino: formulario.destino,
+          capacidad_kg: formulario.capacidadKg,
+        });
       }
+    } catch (error) {
+      setErrorGuardado(error.message);
       setGuardando(false);
+      return;
     }
+    setGuardando(false);
 
     const jornadaGuardada = {
       ...formulario,
-      id: viajePersistido?.id ?? jornada?.id,
+      id: viajePersistido?.id ?? jornadaEncomienda?.id ?? idExistente,
       tipo: tipoFormulario,
-      cantidadPaquetes: totalPaquetes,
+      cantidadPaquetes: tipoFormulario === "encomiendas" ? (jornada?.encomiendas ?? []).length : 0,
       ocupados: viajePersistido?.asientos_ocupados.length ?? (fechaEnEdicion ? jornada.ocupados || 0 : 0),
       precio: viajePersistido?.precio ?? formulario.precio,
       pesoActual: fechaEnEdicion ? jornada.pesoActual || 0 : 0,
-      pesoMaximo: 500,
+      pesoMaximo: Number(jornadaEncomienda?.capacidad_kg ?? 500),
       encomiendas: tipoFormulario === "encomiendas"
-        ? [
-            {
-              ...formulario,
-              tipo: undefined,
-              cliente: busquedaCliente,
-              local: busquedaLocal,
-              localidadEntrega: formulario.destino,
-            },
-          ]
+        ? (fechaEnEdicion ? jornada.encomiendas ?? [] : [])
         : undefined,
     };
 
@@ -323,7 +259,55 @@ function Turnero() {
   };
 
   const jornada = jornadas[fechaSeleccionada];
-  const encomiendasDeJornada = jornada?.encomiendas || (jornada?.tipo === "encomiendas" ? [jornada] : []);
+  const encomiendasDeJornada = jornada?.encomiendas ?? [];
+
+  const imprimirDetalle = () => {
+    const escapar = (valor) => String(valor ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+    const filas = encomiendasDeJornada.map((envio, indice) => `
+      <tr>
+        <td>${indice + 1}</td>
+        <td><strong>${escapar(envio.destino)}</strong><br>${escapar(envio.localidad_destino)} (CP ${escapar(envio.codigo_postal_destino)})</td>
+        <td>${escapar(envio.nombre_destinatario)}<br>${escapar(envio.telefono_destinatario)}</td>
+        <td>${escapar(envio.local_nombre)}<br>${escapar(envio.origen)}</td>
+        <td>${escapar(envio.peso_kg)} kg<br>${escapar(envio.tamano)}</td>
+        <td class="firma"></td>
+      </tr>`).join("");
+
+    const ventana = window.open("", "_blank");
+    if (!ventana) {
+      setErrorGuardado("El navegador bloqueó la ventana de impresión. Permití las ventanas emergentes.");
+      return;
+    }
+
+    ventana.document.write(`<!doctype html>
+      <html lang="es"><head><meta charset="utf-8"><title>Encomiendas ${escapar(fechaSeleccionada)}</title>
+      <style>
+        body { font-family: Arial, sans-serif; color: #111; margin: 24px; }
+        h1 { margin: 0 0 4px; font-size: 22px; }
+        p { margin: 2px 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+        th, td { border: 1px solid #444; padding: 6px 8px; text-align: left; vertical-align: top; }
+        th { background: #eee; }
+        .firma { width: 120px; }
+        tr { page-break-inside: avoid; }
+      </style></head><body>
+        <h1>Encomiendas: ${escapar(jornada.origen)} → ${escapar(jornada.destino)}</h1>
+        <p>Fecha: <strong>${escapar(fechaSeleccionada)}</strong> · Horario: <strong>${escapar(jornada.horario)}</strong></p>
+        <p>${encomiendasDeJornada.length} envíos · ${escapar(jornada.pesoActual)} / ${escapar(jornada.pesoMaximo)} kg</p>
+        <table>
+          <thead><tr><th>#</th><th>Destino</th><th>Recibe</th><th>Retirar en</th><th>Carga</th><th>Firma</th></tr></thead>
+          <tbody>${filas || '<tr><td colspan="6">Sin envíos asignados.</td></tr>'}</tbody>
+        </table>
+      </body></html>`);
+    ventana.document.close();
+    ventana.focus();
+    ventana.print();
+  };
 
   return (
     <div className={styles.turnero}>
@@ -672,110 +656,11 @@ function Turnero() {
                   </div>
                 ) : (
                   <div className={styles.camposEspecificos}>
-                    <h3>Datos de la encomienda</h3>
-                    <div className={styles.grillaCampos}>
-                      <label>ID Encomienda<input name="idEncomienda" value={formulario.idEncomienda} readOnly /></label>
-                      <div className={styles.campoBusqueda}>
-                        <label htmlFor="busqueda-cliente">Cliente</label>
-                        <div className={styles.buscadorLocal}>
-                          <input
-                            id="busqueda-cliente"
-                            value={busquedaCliente}
-                            onChange={actualizarBusquedaCliente}
-                            placeholder="Buscar por nombre, ID o DNI"
-                            autoComplete="off"
-                            required
-                          />
-                          {busquedaCliente && !formulario.idCliente && (
-                            <div className={styles.resultadosLocales}>
-                              {clientes
-                                .filter((cliente) => {
-                                  const texto = `${cliente.id} ${cliente.nombre} ${cliente.documento}`.toLowerCase();
-                                  return texto.includes(busquedaCliente.toLowerCase());
-                                })
-                                .map((cliente) => (
-                                  <button
-                                    type="button"
-                                    className={styles.resultadoLocal}
-                                    key={cliente.id}
-                                    onClick={() => seleccionarCliente(cliente)}
-                                  >
-                                    <strong>{cliente.nombre}</strong>
-                                    <span>{cliente.id} · {cliente.documento}</span>
-                                  </button>
-                                ))}
-                              {clientes.every((cliente) => {
-                                const texto = `${cliente.id} ${cliente.nombre} ${cliente.documento}`.toLowerCase();
-                                return !texto.includes(busquedaCliente.toLowerCase());
-                              }) && <p className={styles.sinResultados}>No se encontraron clientes.</p>}
-                            </div>
-                          )}
-                        </div>
-                        {formulario.idCliente && (
-                          <small className={styles.localSeleccionado}>Cliente seleccionado: {formulario.idCliente}</small>
-                        )}
-                        {errorCliente && <small className={styles.errorCampo}>{errorCliente}</small>}
-                      </div>
-                      <div className={`${styles.campoBusqueda} ${styles.campoAncho}`}>
-                        <label htmlFor="busqueda-local">Local de origen</label>
-                        <div className={styles.buscadorLocal}>
-                          <input
-                            id="busqueda-local"
-                            value={busquedaLocal}
-                            onChange={actualizarBusquedaLocal}
-                            placeholder="Buscar por nombre, ID o dirección"
-                            autoComplete="off"
-                            required
-                          />
-                          {busquedaLocal && !formulario.idLocal && (
-                            <div className={styles.resultadosLocales}>
-                              {locales
-                                .filter((local) => {
-                                  const texto = `${local.id} ${local.nombre} ${local.direccion}`.toLowerCase();
-                                  return texto.includes(busquedaLocal.toLowerCase());
-                                })
-                                .map((local) => (
-                                  <button
-                                    type="button"
-                                    className={styles.resultadoLocal}
-                                    key={local.id}
-                                    onClick={() => seleccionarLocal(local)}
-                                  >
-                                    <strong>{local.nombre}</strong>
-                                    <span>{local.id} · {local.direccion}</span>
-                                  </button>
-                                ))}
-                              {locales.every((local) => {
-                                const texto = `${local.id} ${local.nombre} ${local.direccion}`.toLowerCase();
-                                return !texto.includes(busquedaLocal.toLowerCase());
-                              }) && <p className={styles.sinResultados}>No se encontraron locales.</p>}
-                            </div>
-                          )}
-                        </div>
-                        {formulario.idLocal && (
-                          <small className={styles.localSeleccionado}>Local seleccionado: {formulario.idLocal}</small>
-                        )}
-                        {errorLocal && <small className={styles.errorCampo}>{errorLocal}</small>}
-                      </div>
-                      <label>Estado<select name="estado" value={formulario.estado} onChange={actualizarFormulario}><option>Pendiente</option><option>En preparación</option><option>En tránsito</option><option>Entregada</option></select></label>
-                      <label>Cantidad de paquetes<input type="number" name="cantidadPaquetes" min="1" value={formulario.tamañoAprox === "Mixto" ? totalPaquetes : formulario.cantidadPaquetes} onChange={actualizarFormulario} readOnly={formulario.tamañoAprox === "Mixto"} required /></label>
-                      <label>Tamaño aproximado<select name="tamañoAprox" value={formulario.tamañoAprox} onChange={actualizarFormulario}><option>Pequeño</option><option>Mediano</option><option>Grande</option><option>Mixto</option></select></label>
-                      {formulario.tamañoAprox === "Mixto" && (
-                        <div className={`${styles.composicionPaquetes} ${styles.campoAncho}`}>
-                          <span>Composición de la encomienda</span>
-                          <div className={styles.grillaCampos}>
-                            <label>Paquetes pequeños<input type="number" name="paquetesPequeños" min="0" value={formulario.paquetesPequeños} onChange={actualizarFormulario} /></label>
-                            <label>Paquetes medianos<input type="number" name="paquetesMedianos" min="0" value={formulario.paquetesMedianos} onChange={actualizarFormulario} /></label>
-                            <label>Paquetes grandes<input type="number" name="paquetesGrandes" min="0" value={formulario.paquetesGrandes} onChange={actualizarFormulario} /></label>
-                          </div>
-                          <small>{totalPaquetes} paquetes · {unidadesDeCarga} unidades de carga estimadas</small>
-                        </div>
-                      )}
-                      <label>Costo de envío<input type="number" name="costoEnvio" min="0" value={formulario.costoEnvio} onChange={actualizarFormulario} placeholder="$ 0" required /></label>
-                      <label className={styles.campoAncho}>Dirección de entrega<input name="direccionEntrega" value={formulario.direccionEntrega} onChange={actualizarFormulario} placeholder="Calle y altura, localidad" required /></label>
-                      <label>Fecha de entrega<input type="date" name="fechaEntrega" value={formulario.fechaEntrega} onChange={actualizarFormulario} required /></label>
-                      <label className={styles.campoAncho}>Observaciones<textarea name="observaciones" value={formulario.observaciones} onChange={actualizarFormulario} rows="2" placeholder="Información adicional" /></label>
-                    </div>
+                    <h3>Capacidad del vehículo</h3>
+                    <label>Capacidad de carga (kg)<input type="number" name="capacidadKg" min="0.01" max="99999.99" step="0.01" value={formulario.capacidadKg} onChange={actualizarFormulario} required /></label>
+                    <p className={styles.sinResultados}>
+                      Los destinos específicos y los locales a visitar se cargan después, al agregar cada encomienda.
+                    </p>
                   </div>
                 )}
 
@@ -806,6 +691,9 @@ function Turnero() {
                 <span className={styles.modalEyebrow}>Detalle operativo</span>
                 <h2 id="titulo-detalle-encomiendas">Encomiendas del viaje a {jornada.destino}</h2>
               </div>
+              <button type="button" className={styles.btnSecundario} onClick={imprimirDetalle}>
+                🖨️ Imprimir
+              </button>
               <button type="button" className={styles.btnCerrar} onClick={() => setDetalleAbierto(false)} aria-label="Cerrar">
                 ×
               </button>
@@ -814,36 +702,34 @@ function Turnero() {
             <div className={styles.resumenRuta}>
               <span>Retiro: <strong>{jornada.origen}</strong></span>
               <span>Viaje: <strong>{jornada.destino}</strong></span>
-              <span>{encomiendasDeJornada.length} envíos registrados</span>
+              <span>{encomiendasDeJornada.length} envíos asignados · {jornada.pesoActual} / {jornada.pesoMaximo} kg</span>
             </div>
 
             <div className={styles.listaEncomiendas}>
-              {encomiendasDeJornada.map((encomienda) => {
-                const localRetiro = locales.find((local) => local.id === encomienda.idLocal);
-
-                return (
-                <article className={styles.tarjetaEncomienda} key={encomienda.idEncomienda}>
+              {encomiendasDeJornada.length === 0 && (
+                <p className={styles.sinResultados}>Todavía no hay envíos asignados a esta jornada.</p>
+              )}
+              {encomiendasDeJornada.map((encomienda) => (
+                <article className={styles.tarjetaEncomienda} key={encomienda.id}>
                   <div className={styles.encabezadoEncomienda}>
                     <div>
-                      <strong>{encomienda.idEncomienda}</strong>
-                      <span>{encomienda.cliente || encomienda.idCliente}</span>
+                      <strong>Envío #{encomienda.id}</strong>
+                      <span>{encomienda.cliente_nombre}</span>
                     </div>
                     <span className={styles.estadoEncomienda}>{encomienda.estado}</span>
                   </div>
                   <div className={styles.detalleEncomienda}>
+                    <div><span>Retirar en</span><strong>{encomienda.local_nombre}</strong><small>{encomienda.origen}</small></div>
                     <div>
-                      <span>Retirar en</span>
-                      <strong>{encomienda.local || localRetiro?.nombre || encomienda.idLocal}</strong>
-                      <small>{encomienda.idLocal}</small>
+                      <span>Dirección de destino</span>
+                      <strong>{encomienda.destino}</strong>
+                      <small>{encomienda.localidad_destino} (CP {encomienda.codigo_postal_destino})</small>
                     </div>
-                    <div><span>Dirección del local</span><strong>{localRetiro?.direccion || "Dirección no disponible"}</strong></div>
-                    <div><span>Entregar en</span><strong>{encomienda.direccionEntrega}</strong></div>
-                    <div><span>Localidad</span><strong>{encomienda.localidadEntrega || jornada.destino}</strong></div>
-                    <div><span>Carga</span><strong>{encomienda.cantidadPaquetes} paquetes · {encomienda.tamañoAprox}</strong></div>
+                    <div><span>Recibe</span><strong>{encomienda.nombre_destinatario}</strong><small>{encomienda.telefono_destinatario}</small></div>
+                    <div><span>Carga</span><strong>{encomienda.peso_kg} kg · {encomienda.tamano}</strong></div>
                   </div>
                 </article>
-                );
-              })}
+              ))}
             </div>
           </section>
         </div>

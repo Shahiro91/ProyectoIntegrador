@@ -143,6 +143,8 @@ class SolicitudEncomiendaTests(TestCase):
 			'local': self.local.id,
 			'origen': 'Resistencia',
 			'destino': 'Reconquista',
+			'localidad_destino': 'Reconquista',
+			'codigo_postal_destino': '3560',
 			'nombre_destinatario': 'María Pérez',
 			'telefono_destinatario': '+54 9 362 555-1234',
 			'peso_kg': '2.50',
@@ -367,6 +369,80 @@ class AutenticacionClienteTests(TestCase):
 			HTTP_ORIGIN='http://127.0.0.1:5173',
 		)
 		self.assertEqual(response_con_token.status_code, 201)
+
+
+class AltaLocalTests(TestCase):
+	def setUp(self):
+		self.datos = {'nombre': 'Nuevo Local', 'direccion': 'Calle 1 100', 'telefono': '362 111'}
+
+	def test_cliente_no_puede_crear_local(self):
+		get_user_model().objects.create_user(username='cli', password='password')
+		self.client.login(username='cli', password='password')
+
+		response = self.client.post(reverse('local-list'), data=self.datos)
+
+		self.assertEqual(response.status_code, 403)
+
+	def test_admin_crea_local_y_aparece_en_el_listado(self):
+		get_user_model().objects.create_user(username='adm', password='password', is_staff=True)
+		self.client.login(username='adm', password='password')
+
+		response = self.client.post(reverse('local-list'), data=self.datos)
+
+		self.assertEqual(response.status_code, 201)
+		self.assertIn('Nuevo Local', [local['nombre'] for local in self.client.get(reverse('local-list')).json()])
+
+
+	def test_admin_edita_y_elimina_local_sin_perder_encomiendas(self):
+		admin = get_user_model().objects.create_user(username='adm', password='password', is_staff=True)
+		self.client.login(username='adm', password='password')
+		local = Local.objects.create(nombre='Viejo', direccion='Calle 2 200')
+		solicitud = SolicitudEncomienda.objects.create(
+			cliente=admin, local=local, origen='Calle 2 200', destino='Calle 9',
+			nombre_destinatario='Ana', telefono_destinatario='1', peso_kg='1.00', tamano='Pequeño',
+		)
+		url = reverse('local-detail', args=[local.id])
+
+		editado = self.client.patch(url, data={'nombre': 'Renombrado'}, content_type='application/json')
+		self.assertEqual(editado.status_code, 200)
+		self.assertEqual(editado.json()['nombre'], 'Renombrado')
+
+		self.assertEqual(self.client.delete(url).status_code, 204)
+		solicitud.refresh_from_db()
+		self.assertIsNone(solicitud.local)
+
+	def test_cliente_no_puede_editar_ni_borrar_local(self):
+		get_user_model().objects.create_user(username='cli', password='password')
+		self.client.login(username='cli', password='password')
+		local = Local.objects.create(nombre='Protegido', direccion='Calle 3 300')
+		url = reverse('local-detail', args=[local.id])
+
+		self.assertEqual(self.client.patch(url, data={'nombre': 'X'}, content_type='application/json').status_code, 403)
+		self.assertEqual(self.client.delete(url).status_code, 403)
+
+
+class ProximosViajesTests(TestCase):
+	def test_lista_publica_pasajeros_y_encomiendas_futuros(self):
+		manana = date.today() + timedelta(days=1)
+		Viaje.objects.create(
+			origen='Resistencia', destino='Reconquista', fecha_salida=manana,
+			horario_salida=time(8, 0), precio='1000.00', capacidad_total=10,
+		)
+		JornadaEncomienda.objects.create(
+			fecha=manana, horario=time(9, 0), origen='Resistencia', destino='Villa Ocampo',
+		)
+		JornadaEncomienda.objects.create(
+			fecha=date.today() - timedelta(days=3), horario=time(9, 0),
+			origen='Pasado', destino='Pasado',
+		)
+
+		response = self.client.get(reverse('proximos-viajes'))
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(
+			[(item['tipo'], item['destino']) for item in response.json()],
+			[('pasajeros', 'Reconquista'), ('encomiendas', 'Villa Ocampo')],
+		)
 
 
 class JornadaEncomiendaTests(TestCase):
