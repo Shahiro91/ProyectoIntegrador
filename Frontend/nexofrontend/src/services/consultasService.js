@@ -55,3 +55,23 @@ export async function obtenerConsultas() {
 
   return result
 }
+
+export async function actualizarEstadoConsulta(id, estado) {
+  const csrfToken = await asegurarTokenCsrf()
+  const response = await fetch(`${API_URL}/api/consultas/${id}/`, {
+    method: 'PATCH',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken ?? '',
+    },
+    body: JSON.stringify({ estado }),
+  })
+  const result = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(result.detail ?? 'No se pudo actualizar el estado de la consulta.')
+  }
+
+  return result
+}

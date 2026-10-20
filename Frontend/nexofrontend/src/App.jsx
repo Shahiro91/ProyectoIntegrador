@@ -85,6 +85,15 @@ function App() {
             }
           />
 
+          <Route
+            path="/admin/locales"
+            element={
+              <ProtectedRoute allowedRoles={['admin']}>
+                <Locales />
+              </ProtectedRoute>
+            }
+          />
+
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>

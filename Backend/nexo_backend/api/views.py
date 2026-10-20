@@ -99,16 +99,10 @@ def cerrar_sesion(request):
 
 
 @method_decorator(ensure_csrf_cookie, name='dispatch')
-class LocalViewSet(
-    mixins.ListModelMixin,
-    mixins.RetrieveModelMixin,
-    mixins.CreateModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.DestroyModelMixin,
-    viewsets.GenericViewSet,
-):
+class LocalViewSet(viewsets.ModelViewSet):
     queryset = Local.objects.all().order_by('nombre')
     serializer_class = LocalSerializer
+    permission_classes = [AllowAny]
     http_method_names = ['get', 'post', 'patch', 'delete', 'head', 'options']
 
     def get_permissions(self):
@@ -233,10 +227,12 @@ def proximos_viajes(request):
 class ConsultaViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,
+    mixins.UpdateModelMixin,
     viewsets.GenericViewSet,
 ):
     serializer_class = ConsultaSerializer
-    queryset = Consulta.objects.all().order_by('-fecha_creacion')
+    queryset = Consulta.objects.all().order_by('estado', 'fecha_creacion', 'id')
+    http_method_names = ['get', 'post', 'patch', 'head', 'options']
 
     def get_permissions(self):
         if self.action == 'create':
