@@ -613,6 +613,25 @@ class ProximosViajesTests(TestCase):
 		)
 
 
+class ListarClientesTests(TestCase):
+	def setUp(self):
+		User = get_user_model()
+		self.admin = User.objects.create_superuser('admin@nexo.com', 'admin@nexo.com', 'x')
+		self.cliente_user = User.objects.create_user('ana@x.com', 'ana@x.com', 'x')
+		Cliente.objects.create(usuario=self.cliente_user, nombre='Ana', apellido='Paz', email='ana@x.com')
+		Cliente.objects.create(usuario=self.admin, nombre='Admin', apellido='Nexo', email='admin@nexo.com')
+
+	def test_admin_ve_solo_clientes(self):
+		self.client.force_login(self.admin)
+		response = self.client.get(reverse('clientes'))
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual([c['email'] for c in response.json()], ['ana@x.com'])
+
+	def test_cliente_no_puede_listar(self):
+		self.client.force_login(self.cliente_user)
+		self.assertEqual(self.client.get(reverse('clientes')).status_code, 403)
+
+
 class JornadaEncomiendaTests(TestCase):
 	def setUp(self):
 		self.admin = get_user_model().objects.create_user(username='admin', is_staff=True)

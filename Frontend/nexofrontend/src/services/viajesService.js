@@ -27,6 +27,32 @@ function obtenerTokenCsrf() {
     ?.split('=')[1]
 }
 
+export async function crearReserva(viajeId, numeroAsiento) {
+  let csrfToken = obtenerTokenCsrf()
+  if (!csrfToken) {
+    await obtenerViajes()
+    csrfToken = obtenerTokenCsrf()
+  }
+
+  const response = await fetch(`${API_URL}/api/reservas/`, {
+    method: 'POST',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': csrfToken ?? '',
+    },
+    body: JSON.stringify({ viaje: viajeId, numero_asiento: numeroAsiento }),
+  })
+  const result = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    const detail = result.detail ?? Object.values(result).flat().join(' ')
+    throw new Error(detail || `No se pudo reservar el asiento ${numeroAsiento}.`)
+  }
+
+  return result
+}
+
 export async function guardarViaje(viajeId, viaje) {
   let csrfToken = obtenerTokenCsrf()
   if (!csrfToken) {

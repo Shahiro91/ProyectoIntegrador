@@ -6,7 +6,6 @@ import styles from './Sidebar.module.css'
 const menuItems = [
   { label: 'Inicio', path: '/admin' },
   { label: 'Calendario', path: '/admin/calendario' },
-  { label: 'Viajes', path: '/admin/viajes' },
   { label: 'Locales', path: '/admin/locales' },
   { label: 'Clientes', path: '/admin/clientes' },
   { label: 'Consultas', path: '/admin/consultas' },

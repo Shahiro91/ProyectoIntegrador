@@ -224,6 +224,28 @@ def proximos_viajes(request):
     return Response(viajes[:6])
 
 
+@api_view(['GET'])
+@permission_classes([IsAdminUser])
+def listar_clientes(request):
+    clientes = Cliente.objects.select_related('usuario').filter(
+        usuario__is_staff=False,
+        usuario__is_superuser=False,
+    ).order_by('apellido', 'nombre')
+    return Response([
+        {
+            'id': cliente.id,
+            'nombre': cliente.nombre,
+            'apellido': cliente.apellido,
+            'email': cliente.email,
+            'telefono': cliente.telefono,
+            'direccion': cliente.direccion,
+            'codigo_postal': cliente.codigo_postal,
+            'fecha_registro': cliente.usuario.date_joined,
+        }
+        for cliente in clientes
+    ])
+
+
 class ConsultaViewSet(
     mixins.ListModelMixin,
     mixins.CreateModelMixin,

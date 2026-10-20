@@ -110,6 +110,7 @@ function Consultas() {
                       <td className={styles.messageCell}>{consulta.mensaje}</td>
                       <td>
                         <select
+                          className={consulta.estado === 'resuelta' ? styles.resuelta : styles.pendiente}
                           aria-label={`Estado de la consulta de ${consulta.nombre}`}
                           value={consulta.estado}
                           disabled={actualizandoId === consulta.id}
