@@ -1,5 +1,6 @@
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -30,7 +31,7 @@ from .services import EncomiendaService
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
 def csrf_token(request):
-    return Response({'detail': 'Token CSRF listo.'})
+    return Response({'csrfToken': get_token(request)})
 
 
 def usuario_response(user):

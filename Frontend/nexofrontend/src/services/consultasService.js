@@ -1,25 +1,9 @@
+import { obtenerTokenCsrf } from './csrfService'
+
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
-function obtenerTokenCsrf() {
-  return document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('csrftoken='))
-    ?.split('=')[1]
-}
-
-async function asegurarTokenCsrf() {
-  if (obtenerTokenCsrf()) return obtenerTokenCsrf()
-
-  const response = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' })
-  if (!response.ok) {
-    throw new Error('No se pudo preparar el envío de la consulta.')
-  }
-
-  return obtenerTokenCsrf()
-}
-
 export async function enviarConsulta(datos) {
-  const csrfToken = await asegurarTokenCsrf()
+  const csrfToken = await obtenerTokenCsrf()
   const response = await fetch(`${API_URL}/api/consultas/`, {
     method: 'POST',
     credentials: 'include',
@@ -57,7 +41,7 @@ export async function obtenerConsultas() {
 }
 
 export async function actualizarEstadoConsulta(id, estado) {
-  const csrfToken = await asegurarTokenCsrf()
+  const csrfToken = await obtenerTokenCsrf()
   const response = await fetch(`${API_URL}/api/consultas/${id}/`, {
     method: 'PATCH',
     credentials: 'include',

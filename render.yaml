@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: proyectonexo-fullstack
+    runtime: python
+    plan: free
+    buildCommand: >-
+      pip install -r Backend/nexo_backend/requirements.txt &&
+      pip install nodeenv==1.9.1 &&
+      nodeenv --node=22.14.0 --prebuilt .nodeenv &&
+      . .nodeenv/bin/activate &&
+      cd Frontend/nexofrontend &&
+      npm ci &&
+      npm run build &&
+      cd ../../Backend/nexo_backend &&
+      python manage.py collectstatic --noinput
+    startCommand: >-
+      cd Backend/nexo_backend &&
+      python manage.py migrate &&
+      python manage.py bootstrap_admin &&
+      gunicorn nexo_backend.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false

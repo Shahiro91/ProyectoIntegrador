@@ -1,3 +1,5 @@
+import { obtenerTokenCsrf } from './csrfService'
+
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 export async function obtenerLocales() {
@@ -12,17 +14,6 @@ export async function obtenerLocales() {
   return response.json()
 }
 
-async function obtenerTokenCsrfSeguro() {
-  if (!obtenerTokenCsrf()) {
-    const response = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' })
-    if (!response.ok) throw new Error('No se pudo iniciar una sesión segura.')
-  }
-
-  const csrfToken = obtenerTokenCsrf()
-  if (!csrfToken) throw new Error('No se recibió el token de seguridad.')
-  return csrfToken
-}
-
 function mensajeError(response, fallback) {
   return response?.detail
     ?? Object.values(response ?? {}).flat(Infinity).find((value) => typeof value === 'string')
@@ -30,7 +21,7 @@ function mensajeError(response, fallback) {
 }
 
 async function guardarLocal(id, datos) {
-  const csrfToken = await obtenerTokenCsrfSeguro()
+  const csrfToken = await obtenerTokenCsrf()
   const formData = new FormData()
   formData.append('nombre', datos.nombre)
   formData.append('direccion', datos.direccion)
@@ -65,7 +56,7 @@ export function actualizarLocal(id, datos) {
 }
 
 export async function eliminarLocal(id) {
-  const csrfToken = await obtenerTokenCsrfSeguro()
+  const csrfToken = await obtenerTokenCsrf()
   const response = await fetch(`${API_URL}/api/locales/${id}/`, {
     method: 'DELETE',
     credentials: 'include',
@@ -78,19 +69,8 @@ export async function eliminarLocal(id) {
   }
 }
 
-function obtenerTokenCsrf() {
-  return document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('csrftoken='))
-    ?.split('=')[1]
-}
-
 export async function crearSolicitudEncomienda(datos) {
-  let csrfToken = obtenerTokenCsrf()
-  if (!csrfToken) {
-    await obtenerLocales()
-    csrfToken = obtenerTokenCsrf()
-  }
+  const csrfToken = await obtenerTokenCsrf()
 
   const response = await fetch(`${API_URL}/api/encomiendas/`, {
     method: 'POST',

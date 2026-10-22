@@ -1,3 +1,5 @@
+import { obtenerTokenCsrf } from './csrfService'
+
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 export async function obtenerViajes() {
@@ -20,19 +22,8 @@ export async function obtenerProximosViajes() {
   return response.json()
 }
 
-function obtenerTokenCsrf() {
-  return document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('csrftoken='))
-    ?.split('=')[1]
-}
-
 export async function crearReserva(viajeId, numeroAsiento) {
-  let csrfToken = obtenerTokenCsrf()
-  if (!csrfToken) {
-    await obtenerViajes()
-    csrfToken = obtenerTokenCsrf()
-  }
+  const csrfToken = await obtenerTokenCsrf()
 
   const response = await fetch(`${API_URL}/api/reservas/`, {
     method: 'POST',
@@ -54,11 +45,7 @@ export async function crearReserva(viajeId, numeroAsiento) {
 }
 
 export async function guardarViaje(viajeId, viaje) {
-  let csrfToken = obtenerTokenCsrf()
-  if (!csrfToken) {
-    await obtenerViajes()
-    csrfToken = obtenerTokenCsrf()
-  }
+  const csrfToken = await obtenerTokenCsrf()
 
   const response = await fetch(
     viajeId

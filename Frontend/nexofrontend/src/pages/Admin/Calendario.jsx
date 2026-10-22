@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import Sidebar from '../../components/Admin/Sidebar'
+import Sidebar from '../../Components/Admin/Sidebar'
 import Turnero from '../../Components/Calendario/Turnero'
 import PlanificadorEncomiendas from '../../Components/Calendario/PlanificadorEncomiendas'
 import styles from './Calendario.module.css'

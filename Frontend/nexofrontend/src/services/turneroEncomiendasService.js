@@ -1,3 +1,5 @@
+import { obtenerTokenCsrf } from './csrfService'
+
 const API_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
 
 async function leerRespuesta(response) {
@@ -11,15 +13,6 @@ async function leerRespuesta(response) {
     )
   }
   return result
-}
-
-async function obtenerCsrfToken() {
-  const response = await fetch(`${API_URL}/api/csrf/`, { credentials: 'include' })
-  await leerRespuesta(response)
-  return document.cookie
-    .split('; ')
-    .find((cookie) => cookie.startsWith('csrftoken='))
-    ?.split('=')[1]
 }
 
 export async function obtenerJornadasEncomienda() {
@@ -37,7 +30,7 @@ export async function obtenerSolicitudesTurnero() {
 }
 
 export async function guardarJornadaEncomienda(jornadaId, jornada) {
-  const csrfToken = await obtenerCsrfToken()
+  const csrfToken = await obtenerTokenCsrf()
   const response = await fetch(
     jornadaId
       ? `${API_URL}/api/jornadas-encomienda/${jornadaId}/`
@@ -56,7 +49,7 @@ export async function guardarJornadaEncomienda(jornadaId, jornada) {
 }
 
 export async function asignarSolicitudEncomienda(solicitudId, jornadaId) {
-  const csrfToken = await obtenerCsrfToken()
+  const csrfToken = await obtenerTokenCsrf()
   const response = await fetch(`${API_URL}/api/encomiendas/${solicitudId}/asignar/`, {
     method: 'PATCH',
     credentials: 'include',

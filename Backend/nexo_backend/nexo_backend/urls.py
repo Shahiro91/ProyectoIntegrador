@@ -17,7 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-from django.urls import include, path
+from django.http import HttpResponse
+from django.urls import include, path, re_path
 from rest_framework.routers import DefaultRouter
 
 from api.views import (
@@ -44,6 +45,14 @@ router.register('viajes', ViajeViewSet, basename='viaje')
 router.register('reservas', ReservaViewSet, basename='reserva')
 router.register('encomiendas', SolicitudEncomiendaViewSet, basename='encomienda')
 
+
+def frontend_index(request):
+    index_file = settings.FRONTEND_DIST / 'index.html'
+    if not index_file.is_file():
+        return HttpResponse('Frontend build is missing.', status=503)
+    return HttpResponse(index_file.read_text(encoding='utf-8'), content_type='text/html')
+
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/csrf/', csrf_token, name='csrf-token'),
@@ -54,6 +63,8 @@ urlpatterns = [
     path('api/proximos-viajes/', proximos_viajes, name='proximos-viajes'),
     path('api/clientes/', listar_clientes, name='clientes'),
     path('api/', include(router.urls)),
+    path('', frontend_index, name='frontend'),
+    re_path(r'^(?!api/|admin/|media/|static/).+$', frontend_index, name='frontend-route'),
 ]
 
 if settings.DEBUG:

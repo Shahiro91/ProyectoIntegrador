@@ -1,6 +1,9 @@
 from datetime import date, time, timedelta
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
+from django.core.management import call_command
+from django.core.management.base import CommandError
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -8,6 +11,42 @@ from django.utils import timezone
 from nexo_backend.Clientes.models import Cliente
 
 from .models import Consulta, JornadaEncomienda, Local, Reserva, SolicitudEncomienda, Viaje
+
+
+class BootstrapAdminCommandTests(TestCase):
+	def setUp(self):
+		self.environment = {
+			'DJANGO_SUPERUSER_USERNAME': 'render-admin@example.com',
+			'DJANGO_SUPERUSER_EMAIL': 'render-admin@example.com',
+			'DJANGO_SUPERUSER_PASSWORD': 'Bootstrap-Admin-735!Secure',
+		}
+
+	def test_creates_superuser_from_environment(self):
+		with patch.dict('os.environ', self.environment):
+			call_command('bootstrap_admin')
+
+		admin = get_user_model().objects.get(username=self.environment['DJANGO_SUPERUSER_USERNAME'])
+		self.assertTrue(admin.is_staff)
+		self.assertTrue(admin.is_superuser)
+		self.assertTrue(admin.check_password(self.environment['DJANGO_SUPERUSER_PASSWORD']))
+
+	def test_existing_superuser_is_not_modified(self):
+		admin = get_user_model().objects.create_superuser(
+			username=self.environment['DJANGO_SUPERUSER_USERNAME'],
+			email=self.environment['DJANGO_SUPERUSER_EMAIL'],
+			password='Original-Admin-735!Secure',
+		)
+
+		with patch.dict('os.environ', self.environment):
+			call_command('bootstrap_admin')
+
+		admin.refresh_from_db()
+		self.assertTrue(admin.check_password('Original-Admin-735!Secure'))
+
+	def test_requires_all_environment_variables(self):
+		with patch.dict('os.environ', {}, clear=True):
+			with self.assertRaises(CommandError):
+				call_command('bootstrap_admin')
 
 
 class ListarViajesTests(TestCase):
@@ -527,8 +566,9 @@ class AutenticacionClienteTests(TestCase):
 		)
 		self.assertEqual(response_sin_token.status_code, 403)
 
-		cliente_csrf.get(reverse('csrf-token'))
-		csrf_token = cliente_csrf.cookies['csrftoken'].value
+		respuesta_csrf = cliente_csrf.get(reverse('csrf-token'))
+		csrf_token = respuesta_csrf.json()['csrfToken']
+		self.assertTrue(csrf_token)
 		response_con_token = cliente_csrf.post(
 			url,
 			data=self.datos_registro,
